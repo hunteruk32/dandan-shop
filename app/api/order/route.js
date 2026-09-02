@@ -1,23 +1,17 @@
-const REQUIRED_FIELDS = [
-  "senderName",
-  "senderPhone",
-  "senderAddress",
-  "recipientName",
-  "recipientPhone",
-  "recipientAddress",
-  "category",
-  "item",
-  "qty",
-  "price",
-];
+const REQUIRED_FIELDS = ["senderName", "senderPhone", "senderAddress", "recipientName", "recipientPhone", "recipientAddress"];
 
 export async function POST(req) {
   const body = await req.json();
 
   for (const key of REQUIRED_FIELDS) {
-    if (!body[key] && body[key] !== 0) {
+    if (!String(body[key] || "").trim()) {
       return Response.json({ ok: false, error: "필수 항목이 비어있어요." }, { status: 400 });
     }
+  }
+
+  const items = Array.isArray(body.items) ? body.items : [];
+  if (items.length === 0) {
+    return Response.json({ ok: false, error: "주문할 상품이 없어요." }, { status: 400 });
   }
 
   const url = process.env.ORDER_WEBHOOK_URL;
@@ -28,10 +22,22 @@ export async function POST(req) {
     );
   }
 
-  const qty = Number(body.qty) || 0;
-  const price = Number(body.price) || 0;
-  const shippingFee = Number(body.shippingFee) || 0;
-  const totalAmount = price * qty + shippingFee;
+  let totalAmount = 0;
+  const lineItems = items.map((it) => {
+    const qty = Number(it.qty) || 0;
+    const price = Number(it.price) || 0;
+    const shippingFee = Number(it.shippingFee) || 0;
+    const itemTotal = price * qty + shippingFee;
+    totalAmount += itemTotal;
+    return {
+      category: String(it.category || "").trim(),
+      item: `${String(it.productName || "").trim()}${it.optionName ? ` (${it.optionName})` : ""} x${qty}`,
+      qty,
+      price,
+      shippingFee,
+      totalAmount: itemTotal,
+    };
+  });
 
   const payload = {
     senderName: String(body.senderName).trim(),
@@ -40,12 +46,7 @@ export async function POST(req) {
     recipientName: String(body.recipientName).trim(),
     recipientPhone: String(body.recipientPhone).trim(),
     recipientAddress: String(body.recipientAddress).trim(),
-    category: String(body.category).trim(),
-    item: String(body.item).trim(),
-    qty,
-    price,
-    shippingFee,
-    totalAmount,
+    items: lineItems,
   };
 
   const res = await fetch(url, {

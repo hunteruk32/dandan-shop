@@ -44,6 +44,11 @@ export default function ReservationSearch({ orders }) {
                 {o.orderStatus}
               </span>
             </div>
+            {o.trackingNumber && (
+              <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                {o.courier} {o.trackingNumber}
+              </div>
+            )}
           </div>
         ))}
       </div>

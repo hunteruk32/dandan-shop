@@ -1,4 +1,5 @@
 import "./globals.css";
+import { CartProvider } from "./CartProvider";
 
 export const metadata = {
   title: "단단상회 | 주문 검색 · 상품리스트",
@@ -8,7 +9,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <CartProvider>{children}</CartProvider>
+      </body>
     </html>
   );
 }

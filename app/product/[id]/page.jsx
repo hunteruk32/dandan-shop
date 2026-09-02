@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getProductById, getProducts, STATUS_STYLE } from "@/lib/sheet";
+import CartLink from "../../CartLink";
+import ProductOrderPanel from "./ProductOrderPanel";
 
 export const revalidate = 60;
 
@@ -26,7 +28,10 @@ export default async function ProductPage({ params }) {
 
   return (
     <div className="wrap">
-      <Link href="/" style={{ fontSize: 13, color: "var(--muted)" }}>← 목록으로</Link>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Link href="/" style={{ fontSize: 13, color: "var(--muted)" }}>← 목록으로</Link>
+        <CartLink dark={false} />
+      </div>
 
       <div style={{ marginTop: 12 }}>
         {product.image ? (
@@ -69,13 +74,7 @@ export default async function ProductPage({ params }) {
         />
       )}
 
-      <Link
-        href={`/order/${product.id}`}
-        className="btn"
-        style={{ display: "block", textAlign: "center", marginTop: 24 }}
-      >
-        계좌이체로 주문하기
-      </Link>
+      <ProductOrderPanel product={product} />
 
       <a
         href="https://open.kakao.com/o/pHvM5Eui"

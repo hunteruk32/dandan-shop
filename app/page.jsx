@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getProducts } from "@/lib/sheet";
 import ProductBrowser from "./ProductBrowser";
+import CartLink from "./CartLink";
 
 export const revalidate = 60;
 
@@ -15,6 +16,7 @@ export default async function HomePage() {
           <div className="eyebrow">DIRECT TRADE MARKET</div>
           <h1 className="h1">단단상회 주문 검색 · 상품리스트</h1>
         </div>
+        <CartLink />
       </header>
 
       <div className="wrap">

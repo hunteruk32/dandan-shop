@@ -2,24 +2,17 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { STATUS_STYLE } from "@/lib/sheet";
-
-function fmtDate(d) {
-  const dt = new Date(d + "T00:00:00");
-  if (isNaN(dt)) return d;
-  const days = ["일", "월", "화", "수", "목", "금", "토"];
-  return `${dt.getMonth() + 1}/${dt.getDate()}(${days[dt.getDay()]})`;
-}
+import { STATUS_STYLE, CATEGORIES } from "@/lib/sheet";
 
 export default function ProductBrowser({ products }) {
-  const dates = useMemo(
-    () => Array.from(new Set(products.map((p) => p.date))).sort(),
-    [products]
-  );
-  const [activeDate, setActiveDate] = useState(dates[0] || "");
-  const dayProducts = products.filter((p) => p.date === activeDate);
+  const categories = useMemo(() => {
+    const present = new Set(products.map((p) => p.category));
+    return CATEGORIES.filter((c) => present.has(c));
+  }, [products]);
 
-  if (dates.length === 0) {
+  const [activeCategory, setActiveCategory] = useState("전체");
+
+  if (products.length === 0) {
     return (
       <div className="card" style={{ justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>
         등록된 상품이 아직 없어요.
@@ -27,22 +20,31 @@ export default function ProductBrowser({ products }) {
     );
   }
 
+  const shownProducts =
+    activeCategory === "전체" ? products : products.filter((p) => p.category === activeCategory);
+
   return (
     <>
       <div className="tabs">
-        {dates.map((d) => (
+        <button
+          className={`tab ${activeCategory === "전체" ? "active" : ""}`}
+          onClick={() => setActiveCategory("전체")}
+        >
+          전체
+        </button>
+        {categories.map((c) => (
           <button
-            key={d}
-            className={`tab ${d === activeDate ? "active" : ""}`}
-            onClick={() => setActiveDate(d)}
+            key={c}
+            className={`tab ${c === activeCategory ? "active" : ""}`}
+            onClick={() => setActiveCategory(c)}
           >
-            {fmtDate(d)}
+            {c}
           </button>
         ))}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {dayProducts.map((p) => {
+        {shownProducts.map((p) => {
           const s = STATUS_STYLE[p.status] || STATUS_STYLE["주문가능"];
           return (
             <Link key={p.id} href={`/product/${p.id}`} className="card">

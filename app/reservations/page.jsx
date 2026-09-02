@@ -13,7 +13,7 @@ export default async function ReservationsPage() {
         <div className="seal">단단</div>
         <div>
           <div className="eyebrow">DIRECT TRADE MARKET</div>
-          <h1 className="h1">내 예약 확인</h1>
+          <h1 className="h1">내 주문 확인</h1>
         </div>
       </header>
 

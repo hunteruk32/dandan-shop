@@ -20,12 +20,12 @@ export default async function HomePage() {
       <div className="wrap">
         <div style={{ marginBottom: 20 }}>
           <Link href="/reservations" className="btn" style={{ display: "inline-block" }}>
-            🔍 내 예약 확인하기
+            🔍 내 주문 확인하기
           </Link>
         </div>
 
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>
-          🛍️ 현재 구매 가능 제품 (일자별)
+          🛍️ 현재 구매 가능 제품
         </h2>
         <ProductBrowser products={products} />
       </div>

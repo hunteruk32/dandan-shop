@@ -90,7 +90,7 @@ export default function OrderForm({ product }) {
           {orderId && (
             <>
               {" "}
-              주문번호 <b>{orderId}</b>로 &quot;내 예약 확인&quot;에서 진행 상황을 조회할 수 있어요.
+              주문번호 <b>{orderId}</b>로 &quot;내 주문 확인&quot;에서 진행 상황을 조회할 수 있어요.
             </>
           )}
         </p>

@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "../CartProvider";
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const cart = useCart();
+  const [phone, setPhone] = useState(undefined); // undefined = checking, null = logged out
   const [form, setForm] = useState({
     senderName: "",
-    senderPhone: "",
     senderAddress: "",
     recipientName: "",
     recipientPhone: "",
@@ -19,6 +21,18 @@ export default function CheckoutPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [orderId, setOrderId] = useState("");
   const [orderTotal, setOrderTotal] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.phone) {
+          router.push("/login?next=/checkout");
+        } else {
+          setPhone(data.phone);
+        }
+      });
+  }, [router]);
 
   const bankName = process.env.NEXT_PUBLIC_BANK_NAME || "은행명 미설정";
   const bankAccount = process.env.NEXT_PUBLIC_BANK_ACCOUNT || "계좌번호 미설정";
@@ -32,14 +46,13 @@ export default function CheckoutPage() {
       ...f,
       sameAsSender: checked,
       recipientName: checked ? f.senderName : "",
-      recipientPhone: checked ? f.senderPhone : "",
+      recipientPhone: checked ? phone || "" : "",
       recipientAddress: checked ? f.senderAddress : "",
     }));
   };
 
   const requiredFilled =
     form.senderName.trim() &&
-    form.senderPhone.trim() &&
     form.senderAddress.trim() &&
     form.recipientName.trim() &&
     form.recipientPhone.trim() &&
@@ -55,7 +68,6 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           senderName: form.senderName.trim(),
-          senderPhone: form.senderPhone.trim(),
           senderAddress: form.senderAddress.trim(),
           recipientName: form.recipientName.trim(),
           recipientPhone: form.recipientPhone.trim(),
@@ -75,7 +87,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (!cart) return null;
+  if (!cart || !phone) return null;
 
   if (state !== "done" && cart.items.length === 0) {
     return (
@@ -144,10 +156,10 @@ export default function CheckoutPage() {
           </div>
 
           <div style={{ fontSize: 13, fontWeight: 800, marginTop: 8 }}>발송인(주문자) 정보</div>
+          <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 전화번호 (로그인 계정)</label>
+          <div className="input" style={{ background: "var(--line)", color: "var(--muted)" }}>{phone}</div>
           <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 성함</label>
           <input className="input" value={form.senderName} onChange={update("senderName")} placeholder="입금자명과 동일하게 적어주세요" />
-          <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 전화번호</label>
-          <input className="input" value={form.senderPhone} onChange={update("senderPhone")} placeholder="010-0000-0000" />
           <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 주소</label>
           <input className="input" value={form.senderAddress} onChange={update("senderAddress")} placeholder="주소를 입력해주세요" />
 

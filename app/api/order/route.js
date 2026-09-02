@@ -1,6 +1,14 @@
-const REQUIRED_FIELDS = ["senderName", "senderPhone", "senderAddress", "recipientName", "recipientPhone", "recipientAddress"];
+import { cookies } from "next/headers";
+import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
+
+const REQUIRED_FIELDS = ["senderName", "senderAddress", "recipientName", "recipientPhone", "recipientAddress"];
 
 export async function POST(req) {
+  const session = verifySessionToken(cookies().get(SESSION_COOKIE)?.value);
+  if (!session?.phone) {
+    return Response.json({ ok: false, error: "로그인이 필요해요." }, { status: 401 });
+  }
+
   const body = await req.json();
 
   for (const key of REQUIRED_FIELDS) {
@@ -41,7 +49,7 @@ export async function POST(req) {
 
   const payload = {
     senderName: String(body.senderName).trim(),
-    senderPhone: String(body.senderPhone).trim(),
+    senderPhone: session.phone,
     senderAddress: String(body.senderAddress).trim(),
     recipientName: String(body.recipientName).trim(),
     recipientPhone: String(body.recipientPhone).trim(),

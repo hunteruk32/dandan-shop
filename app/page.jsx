@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getProducts } from "@/lib/sheet";
 import ProductBrowser from "./ProductBrowser";
 import CartLink from "./CartLink";
+import AuthStatus from "./AuthStatus";
 
 export const revalidate = 60;
 
@@ -16,7 +17,10 @@ export default async function HomePage() {
           <div className="eyebrow">DIRECT TRADE MARKET</div>
           <h1 className="h1">단단상회 주문 검색 · 상품리스트</h1>
         </div>
-        <CartLink />
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+          <AuthStatus />
+          <CartLink />
+        </div>
       </header>
 
       <div className="wrap">

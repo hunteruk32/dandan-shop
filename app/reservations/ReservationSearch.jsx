@@ -2,10 +2,21 @@
 
 import { useMemo, useState } from "react";
 
-export default function ReservationSearch({ orders }) {
+function normalizePhone(phone) {
+  return String(phone || "").replace(/[^0-9]/g, "");
+}
+
+export default function ReservationSearch({ orders, myPhone }) {
   const [q, setQ] = useState("");
 
-  const results = useMemo(() => {
+  const myOrders = useMemo(() => {
+    if (!myPhone) return [];
+    return orders.filter(
+      (o) => normalizePhone(o.senderPhone) === myPhone || normalizePhone(o.recipientPhone) === myPhone
+    );
+  }, [orders, myPhone]);
+
+  const searchResults = useMemo(() => {
     if (!q.trim()) return [];
     const needle = q.trim().toLowerCase();
     return orders.filter(
@@ -16,8 +27,17 @@ export default function ReservationSearch({ orders }) {
     );
   }, [q, orders]);
 
+  const showingMine = myPhone && !q.trim();
+  const results = showingMine ? myOrders : searchResults;
+
   return (
     <div>
+      {myPhone && (
+        <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>
+          로그인하신 계정({myPhone})으로 접수된 주문을 보여드려요. 다른 주문번호나 성함으로도 검색할 수 있어요.
+        </p>
+      )}
+
       <input
         className="input"
         placeholder="주문번호(예: ORD-0001) 또는 발송인/수취인 성함"
@@ -26,8 +46,11 @@ export default function ReservationSearch({ orders }) {
       />
 
       <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-        {q.trim() && results.length === 0 && (
+        {!showingMine && q.trim() && results.length === 0 && (
           <p style={{ fontSize: 13, color: "var(--muted)" }}>일치하는 주문이 없어요.</p>
+        )}
+        {showingMine && results.length === 0 && (
+          <p style={{ fontSize: 13, color: "var(--muted)" }}>아직 접수된 주문이 없어요.</p>
         )}
         {results.map((o, i) => (
           <div key={i} className="card" style={{ flexDirection: "column", alignItems: "flex-start", gap: 4 }}>

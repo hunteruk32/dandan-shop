@@ -18,6 +18,16 @@
  *
  * 참고: 주문 하나가 상품 여러 개면 그만큼 행이 늘어나므로, 다음 주문번호는
  * "주문 개수"가 아니라 "지금까지 쌓인 행 수" 기준으로 매겨집니다 (번호가 듬성듬성 늘어날 수 있음).
+ *
+ * ── 회원 시트 연동 (연간/당월 주문 통계 자동 갱신) ──
+ * 주문이 들어올 때마다 "회원" 시트에서 발송인 전화번호가 일치하는 행을 찾아
+ * 연간주문횟수 / 연간주문금액 / 당월주문량 / 당월주문금액(D~G열)을 이 시트의 데이터로
+ * 다시 계산해서 덮어씁니다. 이 기능을 쓰려면 딱 한 번, 아래처럼 회원 시트의 ID를
+ * 스크립트 속성에 등록해주세요:
+ *   1) 이 Apps Script 편집기에서 왼쪽 톱니바퀴(프로젝트 설정) 클릭
+ *   2) "스크립트 속성" 항목에서 "스크립트 속성 추가"
+ *   3) 속성: MEMBER_SHEET_ID / 값: 회원 구글시트 URL의 .../d/와 /edit 사이 긴 문자열
+ * 등록 안 해도 주문 접수 자체는 정상 동작하며, 회원 통계 갱신만 건너뜁니다.
  */
 function doPost(e) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
@@ -51,7 +61,65 @@ function doPost(e) {
     ]);
   });
 
+  updateMemberStats(body.senderPhone);
+
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true, orderId }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function updateMemberStats(phone) {
+  const memberSheetId = PropertiesService.getScriptProperties().getProperty("MEMBER_SHEET_ID");
+  const normalizedPhone = String(phone || "").replace(/[^0-9]/g, "");
+  if (!memberSheetId || !normalizedPhone) return;
+
+  const memberSheet = SpreadsheetApp.openById(memberSheetId).getSheets()[0];
+  const memberData = memberSheet.getDataRange().getValues();
+
+  let memberRow = -1;
+  for (let i = 1; i < memberData.length; i++) {
+    if (String(memberData[i][0]).replace(/[^0-9]/g, "") === normalizedPhone) {
+      memberRow = i + 1; // 시트 행 번호(1-based)
+      break;
+    }
+  }
+  if (memberRow === -1) return; // 회원이 아니면 통계 갱신 안 함
+
+  const orderSheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const orderData = orderSheet.getDataRange().getValues();
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth();
+
+  const yearOrderIds = {};
+  const monthOrderIds = {};
+  let yearAmount = 0;
+  let monthAmount = 0;
+
+  for (let i = 1; i < orderData.length; i++) {
+    const row = orderData[i];
+    const rowPhone = String(row[4] || "").replace(/[^0-9]/g, ""); // 발송인 전화번호
+    if (rowPhone !== normalizedPhone) continue;
+
+    const orderedAt = new Date(row[1]); // 주문일시
+    if (isNaN(orderedAt) || orderedAt.getFullYear() !== curYear) continue;
+
+    const orderId = row[0];
+    const amount = Number(row[13]) || 0; // 합계금액
+
+    yearOrderIds[orderId] = true;
+    yearAmount += amount;
+
+    if (orderedAt.getMonth() === curMonth) {
+      monthOrderIds[orderId] = true;
+      monthAmount += amount;
+    }
+  }
+
+  memberSheet.getRange(memberRow, 4, 1, 4).setValues([[
+    Object.keys(yearOrderIds).length,
+    yearAmount,
+    Object.keys(monthOrderIds).length,
+    monthAmount,
+  ]]);
 }

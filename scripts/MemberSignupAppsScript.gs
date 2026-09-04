@@ -25,6 +25,10 @@ function doPost(e) {
     0,
   ]);
 
+  // 전화번호가 숫자로 자동 변환되어 앞자리 0이 사라지는 것을 방지 (텍스트로 강제)
+  const lastRow = sheet.getLastRow();
+  sheet.getRange(lastRow, 1).setNumberFormat("@").setValue(body.phone || "");
+
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true }))
     .setMimeType(ContentService.MimeType.JSON);

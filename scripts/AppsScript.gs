@@ -61,6 +61,12 @@ function doPost(e) {
     ]);
   });
 
+  // 전화번호가 숫자로 자동 변환되어 앞자리 0이 사라지는 것을 방지 (텍스트로 강제)
+  for (let r = nextDataRow + 1; r <= nextDataRow + items.length; r++) {
+    sheet.getRange(r, 5).setNumberFormat("@").setValue(body.senderPhone || "");
+    sheet.getRange(r, 7).setNumberFormat("@").setValue(body.recipientPhone || "");
+  }
+
   updateMemberStats(body.senderPhone);
 
   return ContentService

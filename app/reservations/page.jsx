@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { getOrders } from "@/lib/sheet";
 import { verifySessionToken, normalizePhone, SESSION_COOKIE } from "@/lib/auth";
 import ReservationSearch from "./ReservationSearch";
+import NavIcons from "../NavIcons";
 
 export default async function ReservationsPage() {
   const orders = await getOrders();
@@ -17,10 +17,12 @@ export default async function ReservationsPage() {
           <div className="eyebrow">DIRECT TRADE MARKET</div>
           <h1 className="h1">내 주문 확인</h1>
         </div>
+        <div style={{ marginLeft: "auto", flexShrink: 0 }}>
+          <NavIcons />
+        </div>
       </header>
 
       <div className="wrap">
-        <Link href="/" style={{ fontSize: 13, color: "var(--muted)" }}>← 상품 목록으로</Link>
         <div style={{ marginTop: 14 }}>
           <ReservationSearch orders={orders} myPhone={myPhone} />
         </div>

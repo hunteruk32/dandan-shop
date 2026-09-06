@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getProductById, getProducts, STATUS_STYLE } from "@/lib/sheet";
 import CartLink from "../../CartLink";
+import NavIcons from "../../NavIcons";
 import ProductOrderPanel from "./ProductOrderPanel";
 
 export const revalidate = 60;
@@ -29,7 +30,7 @@ export default async function ProductPage({ params }) {
   return (
     <div className="wrap">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Link href="/" style={{ fontSize: 13, color: "var(--muted)" }}>← 목록으로</Link>
+        <NavIcons dark={false} />
         <CartLink dark={false} />
       </div>
 

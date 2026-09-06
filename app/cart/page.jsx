@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "../CartProvider";
+import NavIcons from "../NavIcons";
 
 export default function CartPage() {
   const cart = useCart();
@@ -14,11 +15,12 @@ export default function CartPage() {
           <div className="eyebrow">DIRECT TRADE MARKET</div>
           <h1 className="h1">장바구니</h1>
         </div>
+        <div style={{ marginLeft: "auto", flexShrink: 0 }}>
+          <NavIcons />
+        </div>
       </header>
 
       <div className="wrap">
-        <Link href="/" style={{ fontSize: 13, color: "var(--muted)" }}>← 상품 목록으로</Link>
-
         {!cart || cart.items.length === 0 ? (
           <div className="card" style={{ justifyContent: "center", color: "var(--muted)", fontSize: 13, marginTop: 14 }}>
             장바구니가 비어있어요.

@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import NavIcons from "../NavIcons";
 
 function SignupForm() {
   const router = useRouter();
@@ -80,6 +81,9 @@ export default function SignupPage() {
         <div>
           <div className="eyebrow">DIRECT TRADE MARKET</div>
           <h1 className="h1">회원가입</h1>
+        </div>
+        <div style={{ marginLeft: "auto", flexShrink: 0 }}>
+          <NavIcons />
         </div>
       </header>
       <Suspense fallback={null}>

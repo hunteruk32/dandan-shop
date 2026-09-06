@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "../CartProvider";
+import NavIcons from "../NavIcons";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -137,11 +138,12 @@ export default function CheckoutPage() {
           <div className="eyebrow">DIRECT TRADE MARKET</div>
           <h1 className="h1">주문서 작성</h1>
         </div>
+        <div style={{ marginLeft: "auto", flexShrink: 0 }}>
+          <NavIcons />
+        </div>
       </header>
 
       <div className="wrap">
-        <Link href="/cart" style={{ fontSize: 13, color: "var(--muted)" }}>← 장바구니로</Link>
-
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {cart.items.map((i) => (

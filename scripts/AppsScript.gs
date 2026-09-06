@@ -19,8 +19,9 @@
  *
  * 발주 상태 흐름: 입금확인중 → 배송준비중 → 배송중 → 배송완료 (전부 시트에서 직접 수정)
  *
- * 참고: 주문 하나가 상품 여러 개면 그만큼 행이 늘어나므로, 다음 주문번호는
- * "주문 개수"가 아니라 "지금까지 쌓인 행 수" 기준으로 매겨집니다 (번호가 듬성듬성 늘어날 수 있음).
+ * 주문번호 형식: ORD-yyMMdd-발송인전화번호뒷4자리-일련번호 (예: ORD-260907-8287-0001).
+ * 일련번호는 주문 하나가 상품 여러 개면 그만큼 행이 늘어나므로, "주문 개수"가 아니라
+ * "지금까지 쌓인 행 수" 기준으로 매겨집니다 (번호가 듬성듬성 늘어날 수 있음).
  *
  * ── 회원 시트 연동 (연간/당월 주문 통계 자동 갱신) ──
  * 주문이 들어올 때마다 "회원" 시트에서 발송인 전화번호가 일치하는 행을 찾아
@@ -38,8 +39,11 @@ function doPost(e) {
   const items = Array.isArray(body.items) ? body.items : [];
 
   const nextDataRow = sheet.getLastRow(); // 헤더가 1행이므로 마지막 데이터 행 번호 = 지금까지 쌓인 행 수
-  const orderId = "ORD-" + String(nextDataRow).padStart(4, "0");
-  const orderedAt = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  const now = new Date();
+  const dateCode = Utilities.formatDate(now, Session.getScriptTimeZone(), "yyMMdd");
+  const phoneLast4 = String(body.senderPhone || "").replace(/[^0-9]/g, "").slice(-4);
+  const orderId = "ORD-" + dateCode + "-" + phoneLast4 + "-" + String(nextDataRow).padStart(4, "0");
+  const orderedAt = Utilities.formatDate(now, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
 
   items.forEach(function (it) {
     sheet.appendRow([

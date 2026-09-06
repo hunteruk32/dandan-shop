@@ -36,7 +36,7 @@ export default function ReservationSearch({ orders, myPhone }) {
 
       <input
         className="input"
-        placeholder="주문번호(예: ORD-0001) 또는 발송인/수취인 성함으로 내 주문 검색"
+        placeholder="주문번호(예: ORD-260907-8287-0001) 또는 발송인/수취인 성함으로 내 주문 검색"
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />

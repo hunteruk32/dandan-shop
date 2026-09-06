@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getProducts } from "@/lib/sheet";
+import { getProducts, getProductSalesCounts } from "@/lib/sheet";
 import ProductBrowser from "./ProductBrowser";
 import CartLink from "./CartLink";
 import AuthStatus from "./AuthStatus";
@@ -8,7 +8,8 @@ import ProductAssetsLink from "./ProductAssetsLink";
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const products = await getProducts();
+  const [rawProducts, salesCounts] = await Promise.all([getProducts(), getProductSalesCounts()]);
+  const products = rawProducts.map((p) => ({ ...p, salesCount: salesCounts[p.name] || 0 }));
 
   return (
     <div>

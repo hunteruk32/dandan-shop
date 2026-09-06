@@ -8,6 +8,7 @@ const STATUS_OPTIONS = ["주문가능", "품절", "시즌종료"];
 
 const SORT_OPTIONS = [
   { value: "latest", label: "최신순" },
+  { value: "salesDesc", label: "판매량 많은순" },
   { value: "priceAsc", label: "낮은 가격순" },
   { value: "priceDesc", label: "높은 가격순" },
   { value: "name", label: "이름순" },
@@ -41,6 +42,7 @@ export default function ProductBrowser({ products }) {
     .filter((p) => activeStatus === "전체" || p.status === activeStatus);
 
   const shownProducts = [...filtered].sort((a, b) => {
+    if (sortBy === "salesDesc") return (b.salesCount || 0) - (a.salesCount || 0);
     if (sortBy === "priceAsc") return a.price - b.price;
     if (sortBy === "priceDesc") return b.price - a.price;
     if (sortBy === "name") return a.name.localeCompare(b.name, "ko");

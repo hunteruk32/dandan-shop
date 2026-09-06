@@ -55,6 +55,7 @@ export async function POST(req) {
     recipientName: String(body.recipientName).trim(),
     recipientPhone: String(body.recipientPhone).trim(),
     recipientAddress: String(body.recipientAddress).trim(),
+    note: String(body.note || "").trim(),
     items: lineItems,
   };
 

@@ -17,6 +17,7 @@ export default function CheckoutPage() {
     recipientPhone: "",
     recipientAddress: "",
     sameAsSender: false,
+    note: "",
   });
   const [state, setState] = useState("idle"); // idle | submitting | done | error
   const [errorMsg, setErrorMsg] = useState("");
@@ -73,6 +74,7 @@ export default function CheckoutPage() {
           recipientName: form.recipientName.trim(),
           recipientPhone: form.recipientPhone.trim(),
           recipientAddress: form.recipientAddress.trim(),
+          note: form.note.trim(),
           items: cart.items,
         }),
       });
@@ -177,6 +179,16 @@ export default function CheckoutPage() {
           <input className="input" value={form.recipientPhone} onChange={update("recipientPhone")} disabled={form.sameAsSender} placeholder="010-0000-0000" />
           <label style={{ fontSize: 13, fontWeight: 700 }}>수취인 주소</label>
           <input className="input" value={form.recipientAddress} onChange={update("recipientAddress")} disabled={form.sameAsSender} placeholder="배송받으실 주소" />
+
+          <label style={{ fontSize: 13, fontWeight: 700, marginTop: 8 }}>비고 (선택)</label>
+          <textarea
+            className="input"
+            value={form.note}
+            onChange={update("note")}
+            placeholder="배송/포장 관련 요청사항이 있으면 적어주세요"
+            rows={3}
+            style={{ resize: "vertical" }}
+          />
 
           <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 10, fontSize: 13, color: "var(--muted)" }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>

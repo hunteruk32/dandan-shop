@@ -36,15 +36,19 @@ a { color: inherit; text-decoration: none; }
 .seal {
   width: 52px;
   height: 52px;
-  border-radius: 50%;
+  border-radius: 14px;
   border: 2px solid var(--gold);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 15px;
-  color: var(--gold);
+  overflow: hidden;
   flex-shrink: 0;
+}
+
+.seal img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .eyebrow {

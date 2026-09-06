@@ -135,7 +135,7 @@ export default function CheckoutPage() {
   return (
     <div>
       <header className="header">
-        <div className="seal">단단</div>
+        <div className="seal"><img src="/brand-icon.png" alt="단단상회" /></div>
         <div>
           <div className="eyebrow">DIRECT TRADE MARKET</div>
           <h1 className="h1">주문서 작성</h1>

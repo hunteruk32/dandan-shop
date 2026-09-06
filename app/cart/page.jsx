@@ -10,7 +10,7 @@ export default function CartPage() {
   return (
     <div>
       <header className="header">
-        <div className="seal">단단</div>
+        <div className="seal"><img src="/brand-icon.png" alt="단단상회" /></div>
         <div>
           <div className="eyebrow">DIRECT TRADE MARKET</div>
           <h1 className="h1">장바구니</h1>

@@ -20,16 +20,16 @@ export default async function HomePage() {
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
           <AuthStatus />
-          <ProductAssetsLink />
           <CartLink />
         </div>
       </header>
 
       <div className="wrap">
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 20, display: "flex", flexWrap: "wrap", gap: 8 }}>
           <Link href="/reservations" className="btn" style={{ display: "inline-block" }}>
             🔍 내 주문 확인하기
           </Link>
+          <ProductAssetsLink />
         </div>
 
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>

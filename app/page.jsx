@@ -3,6 +3,7 @@ import { getProducts } from "@/lib/sheet";
 import ProductBrowser from "./ProductBrowser";
 import CartLink from "./CartLink";
 import AuthStatus from "./AuthStatus";
+import ProductAssetsLink from "./ProductAssetsLink";
 
 export const revalidate = 60;
 
@@ -19,6 +20,7 @@ export default async function HomePage() {
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
           <AuthStatus />
+          <ProductAssetsLink />
           <CartLink />
         </div>
       </header>

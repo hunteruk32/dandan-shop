@@ -5,9 +5,14 @@ import ReservationSearch from "./ReservationSearch";
 import NavIcons from "../NavIcons";
 
 export default async function ReservationsPage() {
-  const orders = await getOrders();
   const session = verifySessionToken(cookies().get(SESSION_COOKIE)?.value);
   const myPhone = session?.phone ? normalizePhone(session.phone) : "";
+
+  const myOrders = myPhone
+    ? (await getOrders()).filter(
+        (o) => normalizePhone(o.senderPhone) === myPhone || normalizePhone(o.recipientPhone) === myPhone
+      )
+    : [];
 
   return (
     <div>
@@ -24,7 +29,7 @@ export default async function ReservationsPage() {
 
       <div className="wrap">
         <div style={{ marginTop: 14 }}>
-          <ReservationSearch orders={orders} myPhone={myPhone} />
+          <ReservationSearch orders={myOrders} myPhone={myPhone} />
         </div>
       </div>
     </div>

@@ -1,23 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
-function normalizePhone(phone) {
-  return String(phone || "").replace(/[^0-9]/g, "");
-}
+import Link from "next/link";
 
 export default function ReservationSearch({ orders, myPhone }) {
   const [q, setQ] = useState("");
 
-  const myOrders = useMemo(() => {
-    if (!myPhone) return [];
-    return orders.filter(
-      (o) => normalizePhone(o.senderPhone) === myPhone || normalizePhone(o.recipientPhone) === myPhone
-    );
-  }, [orders, myPhone]);
-
-  const searchResults = useMemo(() => {
-    if (!q.trim()) return [];
+  const results = useMemo(() => {
+    if (!q.trim()) return orders;
     const needle = q.trim().toLowerCase();
     return orders.filter(
       (o) =>
@@ -27,29 +17,35 @@ export default function ReservationSearch({ orders, myPhone }) {
     );
   }, [q, orders]);
 
-  const showingMine = myPhone && !q.trim();
-  const results = showingMine ? myOrders : searchResults;
+  if (!myPhone) {
+    return (
+      <p style={{ fontSize: 13, color: "var(--muted)" }}>
+        <Link href="/login?next=/reservations" style={{ color: "var(--accent)", fontWeight: 700 }}>
+          로그인
+        </Link>
+        하시면 내 주문을 확인할 수 있어요.
+      </p>
+    );
+  }
 
   return (
     <div>
-      {myPhone && (
-        <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>
-          로그인하신 계정({myPhone})으로 접수된 주문을 보여드려요. 다른 주문번호나 성함으로도 검색할 수 있어요.
-        </p>
-      )}
+      <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>
+        로그인하신 계정({myPhone})으로 접수된 내 주문만 보여드려요.
+      </p>
 
       <input
         className="input"
-        placeholder="주문번호(예: ORD-0001) 또는 발송인/수취인 성함"
+        placeholder="주문번호(예: ORD-0001) 또는 발송인/수취인 성함으로 내 주문 검색"
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
 
       <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-        {!showingMine && q.trim() && results.length === 0 && (
+        {q.trim() && results.length === 0 && (
           <p style={{ fontSize: 13, color: "var(--muted)" }}>일치하는 주문이 없어요.</p>
         )}
-        {showingMine && results.length === 0 && (
+        {!q.trim() && results.length === 0 && (
           <p style={{ fontSize: 13, color: "var(--muted)" }}>아직 접수된 주문이 없어요.</p>
         )}
         {results.map((o, i) => (

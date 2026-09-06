@@ -4,10 +4,14 @@
  *
  * 예약기록 시트 헤더가 반드시 이 순서여야 합니다:
  * 아이디 | 주문일시 | 발송인 | 발송인 주소 | 발송인 전화번호 | 수취인 | 수취인 전화번호 | 수취인 주소 |
- * 카테고리 | 구매품목 | 수량 | 구매가격 | 배송비 | 합계금액 | 결제상태 | 발주 상태 | 택배사 | 송장번호 | 비고
+ * 카테고리 | 구매품목 | 수량 | 구매가격 | 배송비 | 합계금액 | 결제상태 | 발주 상태 | 택배사 | 송장번호 | 비고 | 수정이력
  *
  * 비고는 체크아웃 화면에서 고객이 남긴 요청사항입니다. 상품이 여러 개라 줄이 여러 개로 나뉘어도
  * 같은 주문이면 모든 줄에 동일한 값이 채워집니다.
+ *
+ * 수정이력은 고객이 "내 주문 확인"에서 수취인 정보/비고를 직접 수정할 때마다 이 스크립트가
+ * 자동으로 한 줄씩 쌓습니다(타임스탬프 + 무엇을 바꿨는지). 직접 입력할 필요 없어요.
+ * 고객은 결제상태가 "입금대기"일 때만 수정할 수 있고, 발송인 정보·상품·수량·가격은 수정 대상이 아닙니다.
  *
  * 한 번의 주문에 상품이 여러 개면(장바구니 주문) 상품마다 한 줄씩 기록됩니다 —
  * 같은 주문번호(아이디)를 공유하고, 발송인/수취인/주문일시/결제상태도 동일하게 채워지되,
@@ -34,8 +38,17 @@
  * 등록 안 해도 주문 접수 자체는 정상 동작하며, 회원 통계 갱신만 건너뜁니다.
  */
 function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
   const body = JSON.parse(e.postData.contents);
+  if (body.action === "update") return handleUpdate(body);
+  return handleCreate(body);
+}
+
+function jsonOutput(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleCreate(body) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
   const items = Array.isArray(body.items) ? body.items : [];
 
   const nextDataRow = sheet.getLastRow(); // 헤더가 1행이므로 마지막 데이터 행 번호 = 지금까지 쌓인 행 수
@@ -66,6 +79,7 @@ function doPost(e) {
       "",
       "",
       body.note || "",
+      "",
     ]);
   });
 
@@ -77,9 +91,85 @@ function doPost(e) {
 
   updateMemberStats(body.senderPhone);
 
-  return ContentService
-    .createTextOutput(JSON.stringify({ ok: true, orderId }))
-    .setMimeType(ContentService.MimeType.JSON);
+  return jsonOutput({ ok: true, orderId: orderId });
+}
+
+function handleUpdate(body) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const data = sheet.getDataRange().getValues();
+  const orderId = String(body.orderId || "").trim();
+  const requesterPhone = String(body.requesterPhone || "").replace(/[^0-9]/g, "");
+
+  const rowNumbers = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === orderId) rowNumbers.push(i + 1); // 1-based 시트 행 번호
+  }
+  if (rowNumbers.length === 0) {
+    return jsonOutput({ ok: false, error: "주문을 찾을 수 없어요." });
+  }
+
+  const firstRow = data[rowNumbers[0] - 1];
+  const senderPhone = String(firstRow[4] || "").replace(/[^0-9]/g, "");
+  if (!requesterPhone || senderPhone !== requesterPhone) {
+    return jsonOutput({ ok: false, error: "본인 주문만 수정할 수 있어요." });
+  }
+
+  const paymentStatus = String(firstRow[14] || "").trim();
+  if (paymentStatus !== "입금대기") {
+    return jsonOutput({ ok: false, error: "입금 확인 후에는 수정할 수 없어요. 사장님께 문의해주세요." });
+  }
+
+  const oldRecipientName = String(firstRow[5] || "").trim();
+  const oldRecipientPhone = String(firstRow[6] || "").trim();
+  const oldRecipientAddress = String(firstRow[7] || "").trim();
+  const oldNote = String(firstRow[18] || "").trim();
+
+  const newRecipientName = String(body.recipientName || "").trim();
+  const newRecipientPhone = String(body.recipientPhone || "").trim();
+  const newRecipientAddress = String(body.recipientAddress || "").trim();
+  const newNote = String(body.note || "").trim();
+
+  const changes = [];
+  if (oldRecipientName !== newRecipientName) {
+    changes.push("수취인 성함: " + oldRecipientName + " → " + newRecipientName);
+  }
+  if (oldRecipientPhone.replace(/[^0-9]/g, "") !== newRecipientPhone.replace(/[^0-9]/g, "")) {
+    changes.push("수취인 전화번호: " + oldRecipientPhone + " → " + newRecipientPhone);
+  }
+  if (oldRecipientAddress !== newRecipientAddress) {
+    changes.push("수취인 주소: " + oldRecipientAddress + " → " + newRecipientAddress);
+  }
+  if (oldNote !== newNote) {
+    changes.push("비고: " + (oldNote || "(없음)") + " → " + (newNote || "(없음)"));
+  }
+
+  if (changes.length === 0) {
+    return jsonOutput({ ok: true, changed: false });
+  }
+
+  const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  const historyEntry = timestamp + " " + changes.join("; ");
+
+  rowNumbers.forEach(function (r) {
+    sheet.getRange(r, 6).setValue(newRecipientName);
+    sheet.getRange(r, 7).setNumberFormat("@").setValue(newRecipientPhone);
+    sheet.getRange(r, 8).setValue(newRecipientAddress);
+    sheet.getRange(r, 19).setValue(newNote);
+
+    const historyCell = sheet.getRange(r, 20);
+    const prevHistory = String(historyCell.getValue() || "").trim();
+    historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
+  });
+
+  return jsonOutput({
+    ok: true,
+    changed: true,
+    historyEntry: historyEntry,
+    recipientName: newRecipientName,
+    recipientPhone: newRecipientPhone,
+    recipientAddress: newRecipientAddress,
+    note: newNote,
+  });
 }
 
 function updateMemberStats(phone) {

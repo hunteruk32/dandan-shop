@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
+import { resolveShippingFees } from "@/lib/shipping";
 
 const REQUIRED_FIELDS = ["senderName", "senderAddress", "recipientName", "recipientPhone", "recipientAddress"];
 
@@ -31,10 +32,10 @@ export async function POST(req) {
   }
 
   let totalAmount = 0;
-  const lineItems = items.map((it) => {
+  const lineItems = resolveShippingFees(items).map((it) => {
     const qty = Number(it.qty) || 0;
     const price = Number(it.price) || 0;
-    const shippingFee = Number(it.shippingFee) || 0;
+    const shippingFee = it.resolvedShippingFee;
     const itemTotal = price * qty + shippingFee;
     totalAmount += itemTotal;
     return {

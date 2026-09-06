@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { calcShippingTotal } from "../lib/shipping";
 
 const CartContext = createContext(null);
 const STORAGE_KEY = "dandan-cart";
@@ -50,7 +51,7 @@ export function CartProvider({ children }) {
 
   const count = items.reduce((sum, i) => sum + i.qty, 0);
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const shippingTotal = items.reduce((sum, i) => sum + (i.shippingFee || 0), 0);
+  const shippingTotal = calcShippingTotal(items);
   const total = subtotal + shippingTotal;
 
   return (

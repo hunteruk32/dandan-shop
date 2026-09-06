@@ -22,6 +22,7 @@ export default function ProductOrderPanel({ product }) {
     optionName: selectedOption ? selectedOption.name : "",
     price: unitPrice,
     shippingFee: product.shippingFee || 0,
+    weightG: selectedOption ? selectedOption.weightG || 0 : 0,
     qty: Number(qty || 1),
   });
 

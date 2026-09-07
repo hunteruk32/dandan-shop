@@ -20,6 +20,9 @@ export default async function HomePage() {
         <div>
           <div className="eyebrow">DIRECT TRADE MARKET</div>
           <h1 className="h1">단단상회 주문 검색 · 상품리스트</h1>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginTop: 4 }}>
+            최상의 제품을 최선의 가격으로
+          </div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
           <AuthStatus />

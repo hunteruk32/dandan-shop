@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ORDER_STATUS_STYLE, ORDER_STATUS_DEFAULT_STYLE } from "@/lib/sheet";
 
 function groupOrders(orders) {
   const map = new Map();
@@ -266,20 +267,23 @@ export default function ReservationSearch({ orders, myPhone }) {
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 4 }}>주문 상품</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {order.items.map((it, i) => (
-                        <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2, padding: "8px 10px", background: "var(--line)", borderRadius: 10 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                            <span>{it.item}</span>
-                            <span style={{ fontWeight: 700 }}>{it.totalAmount.toLocaleString()}원</span>
+                      {order.items.map((it, i) => {
+                        const s = ORDER_STATUS_STYLE[it.orderStatus] || ORDER_STATUS_DEFAULT_STYLE;
+                        return (
+                          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2, padding: "8px 10px", background: "var(--line)", borderRadius: 10 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                              <span>{it.item}</span>
+                              <span style={{ fontWeight: 700 }}>{it.totalAmount.toLocaleString()}원</span>
+                            </div>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <span className="badge" style={{ background: s.bg, color: s.fg }}>{it.orderStatus}</span>
+                              {it.trackingNumber && (
+                                <span style={{ fontSize: 12, color: "var(--muted)" }}>{it.courier} {it.trackingNumber}</span>
+                              )}
+                            </div>
                           </div>
-                          <div style={{ display: "flex", gap: 6 }}>
-                            <span className="badge" style={{ background: "#fff", color: "#C0511F" }}>{it.orderStatus}</span>
-                            {it.trackingNumber && (
-                              <span style={{ fontSize: 12, color: "var(--muted)" }}>{it.courier} {it.trackingNumber}</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 

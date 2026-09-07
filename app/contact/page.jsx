@@ -19,7 +19,7 @@ export default function ContactPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 24 }}>
           <div>운영시간: 월요일-금요일 10:00-17:00 (Lunch 12:00-13:00, 토·일·공휴일 휴무)</div>
           <div>전화: 070-8058-8287</div>
-          <div>이메일: contact@dandan-shop.kr</div>
+          <div>이메일: contact@dandan-shop.co.kr</div>
           <div>주소: 02233 서울 중랑구 겸재로10길 44 면목 루브루 401호</div>
         </div>
 

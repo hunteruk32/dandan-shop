@@ -100,7 +100,7 @@ export default function TermsPage() {
         </Article>
 
         <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 24 }}>
-          문의: 더블에스글로벌 · contact@dandan-shop.kr · 070-8058-8287
+          문의: 더블에스글로벌 · contact@dandan-shop.co.kr · 070-8058-8287
         </p>
       </div>
     </div>

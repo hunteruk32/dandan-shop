@@ -28,6 +28,7 @@ export default function ProductBrowser({ products }) {
   const [activeCategory, setActiveCategory] = useState("전체");
   const [activeStatus, setActiveStatus] = useState("전체");
   const [sortBy, setSortBy] = useState("latest");
+  const [keyword, setKeyword] = useState("");
 
   if (products.length === 0) {
     return (
@@ -37,9 +38,12 @@ export default function ProductBrowser({ products }) {
     );
   }
 
+  const normalizedKeyword = keyword.trim().toLowerCase();
+
   const filtered = products
     .filter((p) => activeCategory === "전체" || p.category === activeCategory)
-    .filter((p) => activeStatus === "전체" || p.status === activeStatus);
+    .filter((p) => activeStatus === "전체" || p.status === activeStatus)
+    .filter((p) => !normalizedKeyword || p.name.toLowerCase().includes(normalizedKeyword));
 
   const shownProducts = [...filtered].sort((a, b) => {
     if (sortBy === "salesDesc") return (b.salesCount || 0) - (a.salesCount || 0);
@@ -52,6 +56,17 @@ export default function ProductBrowser({ products }) {
 
   return (
     <>
+      <div style={{ position: "relative", marginBottom: 14 }}>
+        <input
+          type="search"
+          className="input"
+          placeholder="상품 이름으로 검색"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          style={{ width: "100%" }}
+        />
+      </div>
+
       <div className="tabs">
         <button
           className={`tab ${activeCategory === "전체" ? "active" : ""}`}
@@ -105,7 +120,7 @@ export default function ProductBrowser({ products }) {
 
       {shownProducts.length === 0 ? (
         <div className="card" style={{ justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>
-          조건에 맞는 상품이 없어요.
+          {normalizedKeyword ? `"${keyword}" 검색 결과가 없어요.` : "조건에 맞는 상품이 없어요."}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

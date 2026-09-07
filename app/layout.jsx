@@ -1,5 +1,6 @@
 import "./globals.css";
 import { CartProvider } from "./CartProvider";
+import Footer from "./Footer";
 
 export const metadata = {
   metadataBase: new URL("https://dandan-shop.vercel.app"),
@@ -17,6 +18,7 @@ export default function RootLayout({ children }) {
     <html lang="ko">
       <body>
         <CartProvider>{children}</CartProvider>
+        <Footer />
       </body>
     </html>
   );

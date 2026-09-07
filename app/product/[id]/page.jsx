@@ -3,6 +3,7 @@ import { getProductById, getProducts, STATUS_STYLE } from "@/lib/sheet";
 import CartLink from "../../CartLink";
 import NavIcons from "../../NavIcons";
 import ProductOrderPanel from "./ProductOrderPanel";
+import ZoomableImage from "./ZoomableImage";
 
 export const revalidate = 60;
 
@@ -36,7 +37,7 @@ export default async function ProductPage({ params }) {
 
       <div style={{ marginTop: 12 }}>
         {product.image ? (
-          <img className="detail-image" src={product.image} alt={product.name} />
+          <ZoomableImage className="detail-image" src={product.image} alt={product.name} />
         ) : (
           <div className="detail-image" />
         )}
@@ -76,7 +77,7 @@ export default async function ProductPage({ params }) {
       )}
 
       {product.detailImage && (
-        <img
+        <ZoomableImage
           src={product.detailImage}
           alt={`${product.name} 상세설명`}
           style={{ width: "100%", display: "block", marginTop: 16, borderRadius: 12 }}

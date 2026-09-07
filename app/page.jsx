@@ -4,6 +4,7 @@ import ProductBrowser from "./ProductBrowser";
 import CartLink from "./CartLink";
 import AuthStatus from "./AuthStatus";
 import ProductAssetsLink from "./ProductAssetsLink";
+import ChuseokNotice from "./ChuseokNotice";
 
 export const revalidate = 60;
 
@@ -13,6 +14,7 @@ export default async function HomePage() {
 
   return (
     <div>
+      <ChuseokNotice />
       <header className="header">
         <div className="seal"><img src="/brand-icon.png" alt="단단상회" /></div>
         <div>

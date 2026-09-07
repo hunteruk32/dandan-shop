@@ -75,6 +75,14 @@ export default async function ProductPage({ params }) {
         />
       )}
 
+      {product.detailImage && (
+        <img
+          src={product.detailImage}
+          alt={`${product.name} 상세설명`}
+          style={{ width: "100%", display: "block", marginTop: 16, borderRadius: 12 }}
+        />
+      )}
+
       <ProductOrderPanel product={product} />
 
       <a

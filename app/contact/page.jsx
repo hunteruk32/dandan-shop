@@ -36,7 +36,7 @@ export default function ContactPage() {
         <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>사업자 정보</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, color: "var(--muted)", fontSize: 13 }}>
           <div>상호: 더블에스글로벌</div>
-          <div>대표자: 성옥진</div>
+          <div>대표자: 성욱진</div>
           <div>사업자등록번호: 466-01-03524</div>
           <div>통신판매업신고: 제2024-서울중랑-1185호</div>
         </div>

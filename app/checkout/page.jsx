@@ -80,10 +80,20 @@ export default function CheckoutPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "실패");
-      setOrderId(data.orderId || "");
-      setOrderTotal(data.totalAmount || cart.total);
+      const finalOrderId = data.orderId || "";
+      const finalTotal = data.totalAmount || cart.total;
+      setOrderId(finalOrderId);
+      setOrderTotal(finalTotal);
       cart.clear();
       setState("done");
+      if (typeof window !== "undefined" && typeof window.gtag === "function") {
+        window.gtag("event", "conversion", {
+          send_to: "AW-18369032939/qjyfCIuoyfIcEOvlhLdE",
+          value: finalTotal,
+          currency: "KRW",
+          transaction_id: finalOrderId || `${form.senderName}-${Date.now()}`,
+        });
+      }
     } catch (err) {
       setState("error");
       setErrorMsg(err.message || "주문 접수 중 오류가 발생했어요.");

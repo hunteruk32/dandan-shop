@@ -6,6 +6,7 @@ import ProductOrderPanel from "./ProductOrderPanel";
 import ZoomableImage from "./ZoomableImage";
 import StickyBuyBar from "./StickyBuyBar";
 import ProductTestimonials from "./ProductTestimonials";
+import { getDiscount } from "@/lib/pricing";
 
 export const revalidate = 60;
 
@@ -29,6 +30,7 @@ export default async function ProductPage({ params }) {
   }
 
   const s = STATUS_STYLE[product.status] || STATUS_STYLE["주문가능"];
+  const discount = getDiscount(product.listPrice, product.price);
 
   return (
     <div className="wrap">
@@ -49,8 +51,16 @@ export default async function ProductPage({ params }) {
         <div>
           <div style={{ fontSize: 12, color: "var(--muted)" }}>{product.category}</div>
           <h1 style={{ fontSize: 20, fontWeight: 800, margin: "4px 0" }}>{product.name}</h1>
-          <div className="price" style={{ fontSize: 18 }}>
-            {product.price.toLocaleString()}원{product.options.length > 1 ? "부터" : ""}
+          {discount ? (
+            <div style={{ fontSize: 13, color: "var(--muted)", textDecoration: "line-through" }}>
+              {discount.listPrice.toLocaleString()}원
+            </div>
+          ) : null}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+            {discount ? <span style={{ fontWeight: 800, fontSize: 16, color: "var(--spice)" }}>{discount.rate}%</span> : null}
+            <div className="price" style={{ fontSize: 18 }}>
+              {product.price.toLocaleString()}원{product.options.length > 1 ? "부터" : ""}
+            </div>
           </div>
         </div>
         <span className="badge" style={{ background: s.bg, color: s.fg }}>{product.status}</span>
@@ -120,6 +130,7 @@ export default async function ProductPage({ params }) {
       <StickyBuyBar
         productName={product.name}
         price={product.price}
+        listPrice={product.listPrice}
         hasOptions={product.options.length > 1}
       />
     </div>

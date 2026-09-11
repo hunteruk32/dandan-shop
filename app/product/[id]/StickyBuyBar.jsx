@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getDiscount } from "@/lib/pricing";
 
-export default function StickyBuyBar({ productName, price, hasOptions }) {
+export default function StickyBuyBar({ productName, price, hasOptions, listPrice }) {
+  const discount = getDiscount(listPrice, price);
   const [topVisible, setTopVisible] = useState(true);
   const [bottomVisible, setBottomVisible] = useState(false);
 
@@ -60,8 +62,11 @@ export default function StickyBuyBar({ productName, price, hasOptions }) {
         >
           {productName}
         </div>
-        <div className="price" style={{ marginTop: 0 }}>
-          {price.toLocaleString()}원{hasOptions ? "부터" : ""}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+          {discount ? <span style={{ fontWeight: 800, fontSize: 13, color: "var(--spice)" }}>{discount.rate}%</span> : null}
+          <div className="price" style={{ marginTop: 0 }}>
+            {price.toLocaleString()}원{hasOptions ? "부터" : ""}
+          </div>
         </div>
       </div>
       <button className="btn" style={{ flexShrink: 0 }} onClick={scrollToOrder}>

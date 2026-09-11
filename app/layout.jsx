@@ -1,7 +1,9 @@
 import "./globals.css";
+import { Suspense } from "react";
 import Script from "next/script";
 import { CartProvider } from "./CartProvider";
 import Footer from "./Footer";
+import PageviewTracker from "./PageviewTracker";
 
 export const metadata = {
   metadataBase: new URL("https://dandan-shop.co.kr"),
@@ -31,6 +33,9 @@ export default function RootLayout({ children }) {
             gtag('config', 'AW-18369032939');
           `}
         </Script>
+        <Suspense fallback={null}>
+          <PageviewTracker />
+        </Suspense>
         <CartProvider>{children}</CartProvider>
         <Footer />
       </body>

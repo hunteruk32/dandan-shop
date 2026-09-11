@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
 import { resolveShippingFees } from "@/lib/shipping";
+import { VISITOR_COOKIE } from "@/lib/constants";
+import { sql } from "@/lib/db";
 
 const REQUIRED_FIELDS = ["senderName", "senderAddress", "recipientName", "recipientPhone", "recipientAddress"];
 
@@ -31,8 +33,10 @@ export async function POST(req) {
     );
   }
 
+  const resolvedItems = resolveShippingFees(items);
+
   let totalAmount = 0;
-  const lineItems = resolveShippingFees(items).map((it) => {
+  const lineItems = resolvedItems.map((it) => {
     const qty = Number(it.qty) || 0;
     const price = Number(it.price) || 0;
     const shippingFee = it.resolvedShippingFee;
@@ -71,5 +75,25 @@ export async function POST(req) {
   }
 
   const result = await res.json().catch(() => ({}));
+
+  // 분석용 이벤트 기록 — 실패해도 주문 자체는 이미 접수됐으니 응답에 영향 주지 않는다.
+  try {
+    const visitorId = cookies().get(VISITOR_COOKIE)?.value || null;
+    await Promise.all(
+      resolvedItems
+        .filter((it) => it.productId)
+        .map((it) => {
+          const qty = Number(it.qty) || 0;
+          const amount = (Number(it.price) || 0) * qty;
+          return sql`
+            INSERT INTO events (event_type, product_id, session_id, qty, amount)
+            VALUES ('order_item', ${it.productId}, ${visitorId}, ${qty}, ${amount})
+          `;
+        })
+    );
+  } catch {
+    // 분석 기록 실패는 무시
+  }
+
   return Response.json({ ok: true, totalAmount, orderId: result.orderId || "" });
 }

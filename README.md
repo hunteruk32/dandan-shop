@@ -232,6 +232,21 @@ npm run dev
 > Vercel에 배포할 때 Environment Variables에 `MEMBERS_CSV_URL`, `MEMBER_SIGNUP_WEBHOOK_URL`,
 > `SESSION_SECRET` 세 개도 반드시 추가해주세요. `SESSION_SECRET`은 로컬과 다른 값을 새로 만들어도 됩니다.
 
+## 분석 대시보드 (/admin)
+
+방문수·상품별 클릭수·구매수·판매율·전환율·시간대별 분포를 일/주/월/분기/반기/연 단위로
+보여주는 관리자 페이지입니다. Vercel Storage에서 Neon Postgres를 연결하면 자동 생성되는
+`DATABASE_URL`을 사용합니다.
+
+1. **DB 준비** (최초 1회): Vercel 대시보드 → Storage → Create Database → Neon → 프로젝트에 연결.
+   연결 시 "Sensitive" 토글을 꺼야 로컬(`vercel env pull`)에서도 값을 받아올 수 있습니다.
+2. **스키마 생성** (최초 1회, 또는 스키마 변경 시): `node scripts/init-db.mjs`
+3. **관리자 비밀번호**: `ADMIN_PASSWORD` 환경변수 설정 후 `/admin/login`에서 로그인
+4. 방문 이벤트는 모든 페이지에서 자동 수집(`app/PageviewTracker.jsx` → `/api/track/pageview`),
+   구매 이벤트는 주문 접수 성공 시 `app/api/order/route.js`에서 함께 기록됩니다.
+5. 로컬 개발 DB와 배포(Production/Preview) DB가 **같은 Neon 데이터베이스**를 공유합니다
+   (별도 브랜치를 만들지 않았다면). 로컬에서 테스트 데이터를 넣었다면 배포 전에 정리하세요.
+
 ## 데이터 갱신 주기
 
 메인 페이지는 60초마다 자동으로 최신 시트 내용을 다시 불러옵니다 (`revalidate: 60`).

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getProducts } from "@/lib/sheet";
-import { getSummary, getTimeSeries, getProductPerformance, getHourlyDistribution, PERIODS } from "@/lib/analytics";
+import { getSummary, getTimeSeries, getProductPerformance, getHourlyDistribution, resolveRange, PERIODS } from "@/lib/analytics";
 import AdminLogoutButton from "../AdminLogoutButton";
 
 export const dynamic = "force-dynamic";
@@ -37,19 +37,27 @@ function BarChart({ data, labelKey, valueKey, height = 120 }) {
   );
 }
 
+function toDateInputValue(d) {
+  return d.toISOString().slice(0, 10);
+}
+
 export default async function AdminDashboardPage({ searchParams }) {
   const period = PERIODS[searchParams?.period] ? searchParams.period : "day";
+  const from = searchParams?.from || "";
+  const to = searchParams?.to || "";
+  const range = resolveRange(period, from, to);
 
   const [summary, visitSeries, orderSeries, productPerf, hourly, products] = await Promise.all([
-    getSummary(),
-    getTimeSeries("pageview", period),
-    getTimeSeries("order_item", period),
-    getProductPerformance(),
-    getHourlyDistribution(30),
+    getSummary(range),
+    getTimeSeries("pageview", period, range),
+    getTimeSeries("order_item", period, range),
+    getProductPerformance(range),
+    getHourlyDistribution(range),
     getProducts(),
   ]);
 
   const productMap = new Map(products.map((p) => [p.id, p]));
+  const presetPeriods = Object.entries(PERIODS).filter(([key]) => key !== "custom");
 
   return (
     <div className="wrap" style={{ maxWidth: 1100 }}>
@@ -65,13 +73,13 @@ export default async function AdminDashboardPage({ searchParams }) {
         <KpiCard label="오늘 방문수" value={summary.todayVisits.toLocaleString()} />
         <KpiCard label="누적 방문수" value={summary.totalVisits.toLocaleString()} />
         <KpiCard label="오늘 매출" value={`${summary.todaySales.toLocaleString()}원`} />
-        <KpiCard label="전환율 (전체 기간)" value={`${summary.conversionRate.toFixed(1)}%`} sub="방문 세션 대비 구매 세션 비율" />
+        <KpiCard label={`전환율 (${range.label})`} value={`${summary.conversionRate.toFixed(1)}%`} sub="방문 세션 대비 구매 세션 비율" />
       </div>
 
       <div className="section-head">
         <h2 className="section-title">기간별 추이</h2>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {Object.entries(PERIODS).map(([key, cfg]) => (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          {presetPeriods.map(([key, cfg]) => (
             <a
               key={key}
               href={`/admin?period=${key}`}
@@ -81,6 +89,54 @@ export default async function AdminDashboardPage({ searchParams }) {
               {cfg.label}
             </a>
           ))}
+          <details style={{ position: "relative" }} open={period === "custom" ? true : undefined}>
+            <summary
+              className={`tab ${period === "custom" ? "active" : ""}`}
+              style={{ fontSize: 12, padding: "6px 12px", cursor: "pointer", listStyle: "none" }}
+            >
+              직접입력
+            </summary>
+            <form
+              method="get"
+              style={{
+                position: "absolute",
+                top: "calc(100% + 6px)",
+                right: 0,
+                zIndex: 10,
+                background: "#fff",
+                border: "1px solid var(--line)",
+                borderRadius: 10,
+                padding: 10,
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <input type="hidden" name="period" value="custom" />
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input
+                  type="date"
+                  name="from"
+                  defaultValue={from || toDateInputValue(range.startDate)}
+                  className="input"
+                  style={{ padding: "6px 8px", fontSize: 12, width: 140 }}
+                  required
+                />
+                <span style={{ fontSize: 12, color: "var(--muted)" }}>~</span>
+                <input
+                  type="date"
+                  name="to"
+                  defaultValue={to || toDateInputValue(new Date())}
+                  className="input"
+                  style={{ padding: "6px 8px", fontSize: 12, width: 140 }}
+                  required
+                />
+              </div>
+              <button className="btn" type="submit" style={{ fontSize: 12, padding: "8px 10px" }}>조회</button>
+            </form>
+          </details>
         </div>
       </div>
 
@@ -95,7 +151,8 @@ export default async function AdminDashboardPage({ searchParams }) {
       </div>
 
       <div className="section-head">
-        <h2 className="section-title">시간대별 방문 분포 (최근 30일)</h2>
+        <h2 className="section-title">시간대별 방문 분포</h2>
+        <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label}</div>
       </div>
       <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: 16, marginBottom: 28 }}>
         <BarChart data={hourly} labelKey="hour" valueKey="count" height={100} />
@@ -103,7 +160,7 @@ export default async function AdminDashboardPage({ searchParams }) {
 
       <div className="section-head">
         <h2 className="section-title">상품별 성과</h2>
-        <div style={{ fontSize: 12, color: "var(--muted)" }}>조회수(클릭수) 많은 순</div>
+        <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label} · 조회수(클릭수) 많은 순</div>
       </div>
       <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden", marginBottom: 40 }}>
         <div style={{ overflowX: "auto" }}>
@@ -122,7 +179,7 @@ export default async function AdminDashboardPage({ searchParams }) {
               {productPerf.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: 20, textAlign: "center", color: "var(--muted)" }}>
-                    아직 쌓인 데이터가 없어요. 방문자가 생기면 여기 표시됩니다.
+                    이 기간에는 쌓인 데이터가 없어요.
                   </td>
                 </tr>
               ) : (

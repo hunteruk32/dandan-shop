@@ -27,7 +27,23 @@ async function main() {
   await sql`CREATE INDEX IF NOT EXISTS events_type_created_idx ON events (event_type, created_at)`;
   await sql`CREATE INDEX IF NOT EXISTS events_product_idx ON events (product_id) WHERE product_id IS NOT NULL`;
   await sql`CREATE INDEX IF NOT EXISTS events_session_idx ON events (session_id)`;
-  console.log("done: events table ready");
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id BIGSERIAL PRIMARY KEY,
+      product_id TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      author_name TEXT NOT NULL,
+      rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      content TEXT NOT NULL,
+      photo_url TEXT,
+      hidden BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS reviews_product_idx ON reviews (product_id, hidden, created_at)`;
+
+  console.log("done: events, reviews tables ready");
 }
 
 main().catch((err) => {

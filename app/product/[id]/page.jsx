@@ -6,7 +6,9 @@ import ProductOrderPanel from "./ProductOrderPanel";
 import ZoomableImage from "./ZoomableImage";
 import StickyBuyBar from "./StickyBuyBar";
 import ProductTestimonials from "./ProductTestimonials";
+import ReviewSection from "./ReviewSection";
 import { getDiscount } from "@/lib/pricing";
+import { getReviews } from "@/lib/reviews";
 
 export const revalidate = 60;
 
@@ -31,6 +33,7 @@ export default async function ProductPage({ params }) {
 
   const s = STATUS_STYLE[product.status] || STATUS_STYLE["주문가능"];
   const discount = getDiscount(product.listPrice, product.price);
+  const reviewData = await getReviews(product.id);
 
   return (
     <div className="wrap">
@@ -112,6 +115,8 @@ export default async function ProductPage({ params }) {
           style={{ width: "100%", display: "block", marginTop: 16, borderRadius: 12 }}
         />
       )}
+
+      <ReviewSection productId={product.id} initial={reviewData} />
 
       <div id="bottom-order">
         <ProductOrderPanel product={product} />

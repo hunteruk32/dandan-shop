@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getProducts } from "@/lib/sheet";
 import { getSummary, getTimeSeries, getProductPerformance, getHourlyDistribution, PERIODS } from "@/lib/analytics";
 import AdminLogoutButton from "../AdminLogoutButton";
@@ -54,7 +55,10 @@ export default async function AdminDashboardPage({ searchParams }) {
     <div className="wrap" style={{ maxWidth: 1100 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 className="serif" style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>단단상회 분석 대시보드</h1>
-        <AdminLogoutButton />
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <Link href="/admin/reviews" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>리뷰 관리</Link>
+          <AdminLogoutButton />
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 28 }}>

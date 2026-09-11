@@ -23,6 +23,29 @@ body {
   font-family: "Noto Serif KR", serif;
 }
 
+.nav-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+  background: transparent;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.nav-icon-btn:hover {
+  opacity: 1;
+  background: currentColor;
+}
+
+.nav-icon-btn:hover svg {
+  stroke: #fff;
+}
+
 a { color: inherit; text-decoration: none; }
 
 .wrap {

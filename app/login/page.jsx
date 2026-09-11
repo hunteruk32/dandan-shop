@@ -55,6 +55,29 @@ function LoginForm() {
         {loading ? "로그인 중…" : "로그인"}
       </button>
 
+      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
+        <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+        <span style={{ fontSize: 12, color: "var(--muted)" }}>또는</span>
+        <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+      </div>
+
+      <a
+        href={`/api/auth/kakao?next=${encodeURIComponent(next)}`}
+        className="btn"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          width: "100%",
+          background: "#FEE500",
+          color: "#191600",
+          border: "none",
+        }}
+      >
+        💬 카카오로 3초 만에 시작하기
+      </a>
+
       <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14, textAlign: "center" }}>
         계정이 없으신가요?{" "}
         <Link href={`/signup?next=${encodeURIComponent(next)}`} style={{ color: "var(--accent)", fontWeight: 700 }}>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { STATUS_STYLE, CATEGORIES } from "@/lib/sheet";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { CATEGORIES } from "@/lib/sheet";
+import ProductGridCard from "./ProductGridCard";
 
 const STATUS_OPTIONS = ["주문가능", "품절", "시즌종료"];
 
@@ -25,10 +26,17 @@ export default function ProductBrowser({ products }) {
     return STATUS_OPTIONS.filter((s) => present.has(s));
   }, [products]);
 
+  const searchParams = useSearchParams();
   const [activeCategory, setActiveCategory] = useState("전체");
   const [activeStatus, setActiveStatus] = useState("전체");
   const [sortBy, setSortBy] = useState("latest");
   const [keyword, setKeyword] = useState("");
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("category");
+    if (fromUrl && categories.includes(fromUrl)) setActiveCategory(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   if (products.length === 0) {
     return (
@@ -123,27 +131,10 @@ export default function ProductBrowser({ products }) {
           {normalizedKeyword ? `"${keyword}" 검색 결과가 없어요.` : "조건에 맞는 상품이 없어요."}
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {shownProducts.map((p) => {
-            const s = STATUS_STYLE[p.status] || STATUS_STYLE["주문가능"];
-            return (
-              <Link key={p.id} href={`/product/${p.id}`} className="card">
-                {p.image ? (
-                  <img className="thumb" src={p.image} alt={p.name} />
-                ) : (
-                  <div className="thumb" />
-                )}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 3 }}>{p.category}</div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{p.name}</div>
-                  <div className="price">
-                    {p.price.toLocaleString()}원{p.options.length > 1 ? "부터" : ""}
-                  </div>
-                </div>
-                <span className="badge" style={{ background: s.bg, color: s.fg }}>{p.status}</span>
-              </Link>
-            );
-          })}
+        <div className="card-grid">
+          {shownProducts.map((p) => (
+            <ProductGridCard key={p.id} product={p} />
+          ))}
         </div>
       )}
     </>

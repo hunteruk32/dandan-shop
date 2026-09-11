@@ -5,6 +5,7 @@ import NavIcons from "../../NavIcons";
 import ProductOrderPanel from "./ProductOrderPanel";
 import ZoomableImage from "./ZoomableImage";
 import StickyBuyBar from "./StickyBuyBar";
+import ProductTestimonials from "./ProductTestimonials";
 
 export const revalidate = 60;
 
@@ -54,6 +55,8 @@ export default async function ProductPage({ params }) {
         </div>
         <span className="badge" style={{ background: s.bg, color: s.fg }}>{product.status}</span>
       </div>
+
+      <ProductTestimonials product={product} />
 
       <div id="quick-order">
         <ProductOrderPanel product={product} />

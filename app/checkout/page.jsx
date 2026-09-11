@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "../CartProvider";
 import NavIcons from "../NavIcons";
 import TrustBadges from "../TrustBadges";
+import AddressSearchField, { combineAddress } from "../AddressSearchField";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -13,10 +14,12 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState(undefined); // undefined = checking, null = logged out
   const [form, setForm] = useState({
     senderName: "",
-    senderAddress: "",
+    senderAddressBase: "",
+    senderAddressDetail: "",
     recipientName: "",
     recipientPhone: "",
-    recipientAddress: "",
+    recipientAddressBase: "",
+    recipientAddressDetail: "",
     sameAsSender: false,
     note: "",
   });
@@ -50,16 +53,20 @@ export default function CheckoutPage() {
       sameAsSender: checked,
       recipientName: checked ? f.senderName : "",
       recipientPhone: checked ? phone || "" : "",
-      recipientAddress: checked ? f.senderAddress : "",
+      recipientAddressBase: checked ? f.senderAddressBase : "",
+      recipientAddressDetail: checked ? f.senderAddressDetail : "",
     }));
   };
 
+  const senderAddress = combineAddress(form.senderAddressBase, form.senderAddressDetail);
+  const recipientAddress = combineAddress(form.recipientAddressBase, form.recipientAddressDetail);
+
   const requiredFilled =
     form.senderName.trim() &&
-    form.senderAddress.trim() &&
+    senderAddress &&
     form.recipientName.trim() &&
     form.recipientPhone.trim() &&
-    form.recipientAddress.trim();
+    recipientAddress;
 
   const submit = async () => {
     if (!requiredFilled || !cart || cart.items.length === 0) return;
@@ -71,10 +78,10 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           senderName: form.senderName.trim(),
-          senderAddress: form.senderAddress.trim(),
+          senderAddress,
           recipientName: form.recipientName.trim(),
           recipientPhone: form.recipientPhone.trim(),
-          recipientAddress: form.recipientAddress.trim(),
+          recipientAddress,
           note: form.note.trim(),
           items: cart.items,
         }),
@@ -176,7 +183,12 @@ export default function CheckoutPage() {
           <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 성함</label>
           <input className="input" value={form.senderName} onChange={update("senderName")} placeholder="입금자명과 동일하게 적어주세요" />
           <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 주소</label>
-          <input className="input" value={form.senderAddress} onChange={update("senderAddress")} placeholder="주소를 입력해주세요" />
+          <AddressSearchField
+            base={form.senderAddressBase}
+            detail={form.senderAddressDetail}
+            onBaseChange={(v) => setForm((f) => ({ ...f, senderAddressBase: v }))}
+            onDetailChange={(v) => setForm((f) => ({ ...f, senderAddressDetail: v }))}
+          />
 
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
             <input type="checkbox" id="sameAsSender" checked={form.sameAsSender} onChange={toggleSameAsSender} />
@@ -189,7 +201,13 @@ export default function CheckoutPage() {
           <label style={{ fontSize: 13, fontWeight: 700 }}>수취인 전화번호</label>
           <input className="input" value={form.recipientPhone} onChange={update("recipientPhone")} disabled={form.sameAsSender} placeholder="010-0000-0000" />
           <label style={{ fontSize: 13, fontWeight: 700 }}>수취인 주소</label>
-          <input className="input" value={form.recipientAddress} onChange={update("recipientAddress")} disabled={form.sameAsSender} placeholder="배송받으실 주소" />
+          <AddressSearchField
+            base={form.recipientAddressBase}
+            detail={form.recipientAddressDetail}
+            onBaseChange={(v) => setForm((f) => ({ ...f, recipientAddressBase: v }))}
+            onDetailChange={(v) => setForm((f) => ({ ...f, recipientAddressDetail: v }))}
+            disabled={form.sameAsSender}
+          />
 
           <label style={{ fontSize: 13, fontWeight: 700, marginTop: 8 }}>비고 (선택)</label>
           <textarea

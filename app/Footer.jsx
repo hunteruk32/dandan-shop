@@ -23,6 +23,9 @@ export default function Footer() {
           <span>|</span>
           <Link href="/privacy" style={{ color: "var(--ink)" }}>Privacy Policy</Link>
         </div>
+        <div style={{ marginTop: 10 }}>
+          <Link href="/admin" aria-label="관리자" style={{ color: "var(--line)", fontSize: 13 }}>⚙</Link>
+        </div>
       </div>
     </footer>
   );

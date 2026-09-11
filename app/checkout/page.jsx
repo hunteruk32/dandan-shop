@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "../CartProvider";
 import NavIcons from "../NavIcons";
+import TrustBadges from "../TrustBadges";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -218,6 +219,10 @@ export default function CheckoutPage() {
           {state === "error" && (
             <p style={{ color: "var(--spice)", fontSize: 13 }}>{errorMsg}</p>
           )}
+
+          <div style={{ marginTop: 4 }}>
+            <TrustBadges align="left" />
+          </div>
 
           <button className="btn" onClick={submit} disabled={state === "submitting" || !requiredFilled}>
             {state === "submitting" ? "접수 중…" : "주문 접수하고 계좌번호 받기"}

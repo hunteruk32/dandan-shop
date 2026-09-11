@@ -5,6 +5,7 @@ import CartLink from "./CartLink";
 import AuthStatus from "./AuthStatus";
 import ProductAssetsLink from "./ProductAssetsLink";
 import ChuseokNotice from "./ChuseokNotice";
+import TrustBadges from "./TrustBadges";
 
 export const revalidate = 60;
 
@@ -36,6 +37,10 @@ export default async function HomePage() {
             🔍 내 주문 확인하기
           </Link>
           <ProductAssetsLink />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <TrustBadges align="left" />
         </div>
 
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>

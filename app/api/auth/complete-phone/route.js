@@ -5,12 +5,12 @@ import {
   normalizePhone,
   SESSION_COOKIE,
   SESSION_MAX_AGE,
+  PENDING_COOKIE,
 } from "@/lib/auth";
-import { PENDING_COOKIE } from "../kakao/callback/route";
 
 export async function POST(req) {
   const pending = verifySessionToken(cookies().get(PENDING_COOKIE)?.value);
-  if (!pending || !pending.kakaoId) {
+  if (!pending || !pending.socialId) {
     return Response.json(
       { ok: false, error: "인증 정보가 만료되었어요. 다시 로그인해주세요." },
       { status: 400 }
@@ -25,7 +25,7 @@ export async function POST(req) {
 
   const token = createSessionToken({
     phone,
-    kakaoId: pending.kakaoId,
+    socialId: pending.socialId,
     nickname: pending.nickname,
     provider: pending.provider,
   });

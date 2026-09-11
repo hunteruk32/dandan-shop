@@ -78,6 +78,24 @@ function LoginForm() {
         💬 카카오로 3초 만에 시작하기
       </a>
 
+      <a
+        href={`/api/auth/naver?next=${encodeURIComponent(next)}`}
+        className="btn"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          width: "100%",
+          marginTop: 8,
+          background: "#03C75A",
+          color: "#fff",
+          border: "none",
+        }}
+      >
+        N 네이버로 3초 만에 시작하기
+      </a>
+
       <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14, textAlign: "center" }}>
         계정이 없으신가요?{" "}
         <Link href={`/signup?next=${encodeURIComponent(next)}`} style={{ color: "var(--accent)", fontWeight: 700 }}>

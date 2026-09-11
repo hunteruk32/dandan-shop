@@ -1,9 +1,7 @@
 import { cookies } from "next/headers";
-import { createSessionToken } from "@/lib/auth";
+import { createSessionToken, PENDING_COOKIE, PENDING_MAX_AGE } from "@/lib/auth";
 
 const REDIRECT_URI = "https://dandan-shop.co.kr/api/auth/kakao/callback";
-export const PENDING_COOKIE = "dandan_kakao_pending";
-export const PENDING_MAX_AGE = 60 * 10; // 10분
 
 export async function GET(req) {
   const { searchParams, origin } = new URL(req.url);
@@ -40,7 +38,7 @@ export async function GET(req) {
 
   const nickname = profile.kakao_account?.profile?.nickname || "";
   const pendingToken = createSessionToken(
-    { kakaoId: String(profile.id), nickname, provider: "kakao", next },
+    { socialId: String(profile.id), nickname, provider: "kakao", next },
     PENDING_MAX_AGE
   );
   cookies().set(PENDING_COOKIE, pendingToken, {

@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
-import { verifySessionToken } from "@/lib/auth";
-import { PENDING_COOKIE } from "../kakao/callback/route";
+import { verifySessionToken, PENDING_COOKIE } from "@/lib/auth";
 
 export async function GET() {
   const pending = verifySessionToken(cookies().get(PENDING_COOKIE)?.value);

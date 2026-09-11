@@ -90,6 +90,18 @@ a { color: inherit; text-decoration: none; }
   color: var(--bg);
 }
 
+.tab-gift {
+  border-color: var(--gold);
+  background: #FBF0D9;
+  color: #8A6716;
+}
+
+.tab-gift.active {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: #3A2C05;
+}
+
 .card {
   background: #fff;
   border: 1px solid var(--line);

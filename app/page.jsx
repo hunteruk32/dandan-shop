@@ -11,6 +11,7 @@ import CategoryQuickGrid from "./CategoryQuickGrid";
 import BestProducts from "./BestProducts";
 import TrustStrip from "./TrustStrip";
 import StatsBanner from "./StatsBanner";
+import TrustBadges from "./TrustBadges";
 
 export const revalidate = 60;
 
@@ -91,7 +92,8 @@ export default async function HomePage() {
             <h2 className="section-title">지금 구매 가능한 상품</h2>
             <div style={{ fontSize: 12, color: "var(--muted)" }}>전체 {products.length}개 상품</div>
           </div>
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 14, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
+            <TrustBadges align="left" />
             <ProductAssetsLink />
           </div>
           <Suspense fallback={null}>

@@ -1,4 +1,5 @@
 import "./globals.css";
+import Script from "next/script";
 import { CartProvider } from "./CartProvider";
 import Footer from "./Footer";
 
@@ -17,6 +18,19 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ko">
       <body>
+        {/* Google tag (gtag.js) — 단단상회 디맨드젠 캠페인 전환 추적 */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-18369032939"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-18369032939');
+          `}
+        </Script>
         <CartProvider>{children}</CartProvider>
         <Footer />
       </body>

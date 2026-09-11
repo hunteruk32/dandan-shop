@@ -25,6 +25,11 @@
  *   정상 흐름: 입금확인중 → 배송준비중 → 배송중 → 배송완료
  *   취소: 취소중 → 취소완료 / 반품: 반품중 → 반품완료 / 교환: 교환중 → 교환완료
  *
+ * "내 주문 확인"에서 고객이 취소/반품을 요청하면(handleStatusRequest) 발주 상태가
+ * 자동으로 취소중/반품중으로 바뀌고 수정이력에 "[고객] 취소 요청: 사유"가 남습니다.
+ * 실제 환불·반송 처리는 여기서 자동으로 되지 않으니, 확인 후 계좌이체로 환불해주시고
+ * 처리가 끝나면 발주 상태를 취소완료/반품완료로 직접 바꿔주세요.
+ *
  * 주문번호 형식: ORD-yyMMdd-발송인전화번호뒷4자리-일련번호 (예: ORD-260907-8287-0001).
  * 일련번호는 주문 하나가 상품 여러 개면 그만큼 행이 늘어나므로, "주문 개수"가 아니라
  * "지금까지 쌓인 행 수" 기준으로 매겨집니다 (번호가 듬성듬성 늘어날 수 있음).
@@ -42,6 +47,7 @@
 function doPost(e) {
   const body = JSON.parse(e.postData.contents);
   if (body.action === "update") return handleUpdate(body);
+  if (body.action === "statusRequest") return handleStatusRequest(body);
   return handleCreate(body);
 }
 
@@ -172,6 +178,74 @@ function handleUpdate(body) {
     recipientAddress: newRecipientAddress,
     note: newNote,
   });
+}
+
+/**
+ * 고객이 "내 주문 확인"에서 취소/반품을 요청할 때 호출됨 (action: "statusRequest").
+ * body: { orderId, requesterPhone, itemIndex, type: "cancel" | "return", reason }
+ *
+ * itemIndex는 이 주문(orderId)에 속한 행들 중 몇 번째 상품인지(0부터 시작, 시트에 쌓인
+ * 순서 그대로) — Next.js 쪽에서 order.items 배열의 인덱스를 그대로 보내준다.
+ *
+ * 취소 요청은 발주 상태가 "입금확인중"/"배송준비중"일 때만(아직 배송 시작 전) 가능하고,
+ * 반품 요청은 "배송완료"일 때만 가능하다. 성공하면 발주 상태를 "취소중"/"반품중"으로 바꾸고
+ * 수정이력에 남긴다 — 실제 환불 처리(입금 취소, 반송 수거 등)는 사장님이 시트에서
+ * 직접 진행하고 완료되면 "취소완료"/"반품완료"로 마무리하면 된다.
+ */
+function handleStatusRequest(body) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const data = sheet.getDataRange().getValues();
+  const orderId = String(body.orderId || "").trim();
+  const requesterPhone = String(body.requesterPhone || "").replace(/[^0-9]/g, "");
+  const itemIndex = Number(body.itemIndex);
+  const type = body.type;
+  const reason = String(body.reason || "").trim();
+
+  const rowNumbers = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === orderId) rowNumbers.push(i + 1);
+  }
+  if (rowNumbers.length === 0) {
+    return jsonOutput({ ok: false, error: "주문을 찾을 수 없어요." });
+  }
+
+  const firstRow = data[rowNumbers[0] - 1];
+  const senderPhone = String(firstRow[4] || "").replace(/[^0-9]/g, "");
+  if (!requesterPhone || senderPhone !== requesterPhone) {
+    return jsonOutput({ ok: false, error: "본인 주문만 요청할 수 있어요." });
+  }
+
+  const targetRowNum = rowNumbers[itemIndex];
+  if (!targetRowNum) {
+    return jsonOutput({ ok: false, error: "상품을 찾을 수 없어요." });
+  }
+
+  const currentStatus = String(sheet.getRange(targetRowNum, 16).getValue()).trim();
+  let newStatus;
+  if (type === "cancel") {
+    if (["입금확인중", "배송준비중"].indexOf(currentStatus) === -1) {
+      return jsonOutput({ ok: false, error: "이미 배송이 시작되어 취소할 수 없어요. 반품 요청을 이용해주세요." });
+    }
+    newStatus = "취소중";
+  } else if (type === "return") {
+    if (currentStatus !== "배송완료") {
+      return jsonOutput({ ok: false, error: "배송완료된 상품만 반품 요청할 수 있어요." });
+    }
+    newStatus = "반품중";
+  } else {
+    return jsonOutput({ ok: false, error: "잘못된 요청이에요." });
+  }
+
+  sheet.getRange(targetRowNum, 16).setValue(newStatus);
+
+  const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  const label = type === "cancel" ? "취소 요청" : "반품 요청";
+  const historyEntry = timestamp + " [고객] " + label + (reason ? ": " + reason : "");
+  const historyCell = sheet.getRange(targetRowNum, 20);
+  const prevHistory = String(historyCell.getValue() || "").trim();
+  historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
+
+  return jsonOutput({ ok: true, newStatus: newStatus });
 }
 
 function updateMemberStats(phone) {

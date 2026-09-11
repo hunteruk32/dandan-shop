@@ -39,6 +39,11 @@ export default function ReservationSearch({ orders, myPhone }) {
   const [saveState, setSaveState] = useState("idle"); // idle | saving | error
   const [saveError, setSaveError] = useState("");
 
+  const [requestKey, setRequestKey] = useState(null); // `${orderId}-${itemIndex}` — 취소/반품 요청 폼이 열린 항목
+  const [requestReason, setRequestReason] = useState("");
+  const [requestState, setRequestState] = useState("idle"); // idle | saving | error
+  const [requestError, setRequestError] = useState("");
+
   useEffect(() => {
     setLocalOrders(orders);
   }, [orders]);
@@ -143,6 +148,52 @@ export default function ReservationSearch({ orders, myPhone }) {
     } catch (err) {
       setSaveState("error");
       setSaveError(err.message || "수정 중 오류가 발생했어요.");
+    }
+  };
+
+  const openRequestForm = (order, itemIndex) => {
+    setRequestKey(`${order.id}-${itemIndex}`);
+    setRequestReason("");
+    setRequestState("idle");
+    setRequestError("");
+  };
+
+  const closeRequestForm = () => {
+    setRequestKey(null);
+    setRequestReason("");
+    setRequestState("idle");
+    setRequestError("");
+  };
+
+  const submitStatusRequest = async (order, itemIndex, type) => {
+    setRequestState("saving");
+    setRequestError("");
+    try {
+      const res = await fetch("/api/order/request-action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, itemIndex, type, reason: requestReason.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "요청에 실패했어요.");
+
+      setLocalOrders((prev) => {
+        const next = [...prev];
+        let seen = -1;
+        for (let i = 0; i < next.length; i++) {
+          if (next[i].id !== order.id) continue;
+          seen += 1;
+          if (seen === itemIndex) {
+            next[i] = { ...next[i], orderStatus: data.newStatus };
+            break;
+          }
+        }
+        return next;
+      });
+      closeRequestForm();
+    } catch (err) {
+      setRequestState("error");
+      setRequestError(err.message || "요청 중 오류가 발생했어요.");
     }
   };
 
@@ -269,13 +320,17 @@ export default function ReservationSearch({ orders, myPhone }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {order.items.map((it, i) => {
                         const s = ORDER_STATUS_STYLE[it.orderStatus] || ORDER_STATUS_DEFAULT_STYLE;
+                        const key = `${order.id}-${i}`;
+                        const canCancel = ["입금확인중", "배송준비중"].includes(it.orderStatus);
+                        const canReturn = it.orderStatus === "배송완료";
+                        const isRequesting = requestKey === key;
                         return (
-                          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2, padding: "8px 10px", background: "var(--line)", borderRadius: 10 }}>
+                          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", background: "var(--line)", borderRadius: 10 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
                               <span>{it.item}</span>
                               <span style={{ fontWeight: 700 }}>{it.totalAmount.toLocaleString()}원</span>
                             </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                               <span className="badge" style={{ background: s.bg, color: s.fg }}>{it.orderStatus}</span>
                               {it.trackingNumber && (
                                 <span style={{ fontSize: 12, color: "var(--muted)" }}>{it.courier} {it.trackingNumber}</span>
@@ -289,7 +344,57 @@ export default function ReservationSearch({ orders, myPhone }) {
                                   ✍️ 리뷰 쓰기
                                 </Link>
                               )}
+                              {(canCancel || canReturn) && !isRequesting && (
+                                <button
+                                  onClick={() => openRequestForm(order, i)}
+                                  className="badge"
+                                  style={{
+                                    marginLeft: it.orderStatus === "배송완료" ? 0 : "auto",
+                                    border: "1px solid var(--spice)",
+                                    background: "#fff",
+                                    color: "var(--spice)",
+                                    cursor: "pointer",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {canCancel ? "취소 요청" : "반품 요청"}
+                                </button>
+                              )}
                             </div>
+
+                            {isRequesting && (
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 2 }}>
+                                <textarea
+                                  className="input"
+                                  rows={2}
+                                  placeholder="사유를 알려주시면 처리에 도움이 돼요 (선택)"
+                                  value={requestReason}
+                                  onChange={(e) => setRequestReason(e.target.value)}
+                                  style={{ resize: "vertical", fontSize: 13 }}
+                                />
+                                {requestState === "error" && (
+                                  <p style={{ color: "var(--spice)", fontSize: 12, margin: 0 }}>{requestError}</p>
+                                )}
+                                <div style={{ display: "flex", gap: 6 }}>
+                                  <button
+                                    className="btn"
+                                    style={{ flex: 1, background: "#fff", color: "var(--ink)", border: "1px solid var(--line)", padding: "8px 10px", fontSize: 12 }}
+                                    onClick={closeRequestForm}
+                                    disabled={requestState === "saving"}
+                                  >
+                                    닫기
+                                  </button>
+                                  <button
+                                    className="btn"
+                                    style={{ flex: 1, background: "var(--spice)", padding: "8px 10px", fontSize: 12 }}
+                                    onClick={() => submitStatusRequest(order, i, canCancel ? "cancel" : "return")}
+                                    disabled={requestState === "saving"}
+                                  >
+                                    {requestState === "saving" ? "접수 중…" : canCancel ? "취소 요청 보내기" : "반품 요청 보내기"}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}

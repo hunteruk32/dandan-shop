@@ -40,6 +40,22 @@ export default function CheckoutPage() {
       });
   }, [router]);
 
+  // 이전에 주문한 적 있으면 발송인 성함·주소를 자동으로 채워준다 (수취인은 매번 다를 수 있어 제외).
+  useEffect(() => {
+    if (!phone) return;
+    fetch("/api/checkout/prefill")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.ok) return;
+        setForm((f) => ({
+          ...f,
+          senderName: f.senderName || data.senderName,
+          senderAddressBase: f.senderAddressBase || data.senderAddress,
+        }));
+      })
+      .catch(() => {});
+  }, [phone]);
+
   const bankName = process.env.NEXT_PUBLIC_BANK_NAME || "은행명 미설정";
   const bankAccount = process.env.NEXT_PUBLIC_BANK_ACCOUNT || "계좌번호 미설정";
   const bankHolder = process.env.NEXT_PUBLIC_BANK_HOLDER || "예금주 미설정";

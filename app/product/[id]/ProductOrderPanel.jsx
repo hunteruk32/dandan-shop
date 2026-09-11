@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "../../CartProvider";
+import { getDiscount } from "@/lib/pricing";
 
 export default function ProductOrderPanel({ product }) {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function ProductOrderPanel({ product }) {
 
   const selectedOption = product.options[Number(optionIndex)] || null;
   const unitPrice = selectedOption ? selectedOption.price : product.price;
+  const discount = getDiscount(selectedOption?.listPrice, unitPrice);
 
   const buildItem = () => ({
     productId: product.id,
@@ -43,11 +45,14 @@ export default function ProductOrderPanel({ product }) {
         <>
           <label style={{ fontSize: 13, fontWeight: 700 }}>옵션</label>
           <select className="input" value={optionIndex} onChange={(e) => setOptionIndex(e.target.value)}>
-            {product.options.map((o, i) => (
-              <option key={i} value={i}>
-                {o.name} — {o.price.toLocaleString()}원
-              </option>
-            ))}
+            {product.options.map((o, i) => {
+              const d = getDiscount(o.listPrice, o.price);
+              return (
+                <option key={i} value={i}>
+                  {o.name} — {o.price.toLocaleString()}원{d ? ` (${d.rate}%↓)` : ""}
+                </option>
+              );
+            })}
           </select>
         </>
       )}
@@ -61,9 +66,17 @@ export default function ProductOrderPanel({ product }) {
         onChange={(e) => setQty(e.target.value)}
       />
 
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 800 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 15, fontWeight: 800 }}>
         <span>소계</span>
-        <span style={{ color: "var(--spice)" }}>{(unitPrice * Number(qty || 1)).toLocaleString()}원</span>
+        <span style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+          {discount ? (
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", textDecoration: "line-through" }}>
+              {(discount.listPrice * Number(qty || 1)).toLocaleString()}원
+            </span>
+          ) : null}
+          {discount ? <span style={{ fontSize: 13, fontWeight: 800, color: "var(--spice)" }}>{discount.rate}%</span> : null}
+          <span style={{ color: "var(--spice)" }}>{(unitPrice * Number(qty || 1)).toLocaleString()}원</span>
+        </span>
       </div>
 
       <div style={{ display: "flex", gap: 8 }}>

@@ -74,16 +74,27 @@ export default async function ProductPage({ params }) {
 
       {product.options.length > 0 && (
         <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 6 }}>
-          {product.options.map((o, i) => (
-            <div
-              key={i}
-              className="card"
-              style={{ justifyContent: "space-between", padding: "10px 14px" }}
-            >
-              <span style={{ fontSize: 13 }}>{o.name}</span>
-              <span style={{ fontWeight: 700, fontSize: 14 }}>{o.price.toLocaleString()}원</span>
-            </div>
-          ))}
+          {product.options.map((o, i) => {
+            const d = getDiscount(o.listPrice, o.price);
+            return (
+              <div
+                key={i}
+                className="card"
+                style={{ justifyContent: "space-between", padding: "10px 14px" }}
+              >
+                <span style={{ fontSize: 13 }}>{o.name}</span>
+                <span style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                  {d ? (
+                    <span style={{ fontSize: 11, color: "var(--muted)", textDecoration: "line-through" }}>
+                      {d.listPrice.toLocaleString()}원
+                    </span>
+                  ) : null}
+                  {d ? <span style={{ fontSize: 12, fontWeight: 800, color: "var(--spice)" }}>{d.rate}%</span> : null}
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>{o.price.toLocaleString()}원</span>
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 

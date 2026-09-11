@@ -4,6 +4,7 @@ import CartLink from "../../CartLink";
 import NavIcons from "../../NavIcons";
 import ProductOrderPanel from "./ProductOrderPanel";
 import ZoomableImage from "./ZoomableImage";
+import StickyBuyBar from "./StickyBuyBar";
 
 export const revalidate = 60;
 
@@ -54,6 +55,10 @@ export default async function ProductPage({ params }) {
         <span className="badge" style={{ background: s.bg, color: s.fg }}>{product.status}</span>
       </div>
 
+      <div id="quick-order">
+        <ProductOrderPanel product={product} />
+      </div>
+
       {product.options.length > 0 && (
         <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 6 }}>
           {product.options.map((o, i) => (
@@ -84,16 +89,36 @@ export default async function ProductPage({ params }) {
         />
       )}
 
-      <ProductOrderPanel product={product} />
+      <div id="bottom-order">
+        <ProductOrderPanel product={product} />
 
-      <a
-        href="https://open.kakao.com/o/pHvM5Eui"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ display: "block", textAlign: "center", marginTop: 10, fontSize: 13, color: "var(--muted)" }}
-      >
-        카톡으로 먼저 문의하기
-      </a>
+        <a
+          href="https://open.kakao.com/o/pHvM5Eui"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            marginTop: 12,
+            padding: "12px 18px",
+            borderRadius: 10,
+            background: "#FEE500",
+            color: "#191600",
+            fontWeight: 700,
+            fontSize: 14,
+          }}
+        >
+          💬 카카오톡으로 먼저 문의하기
+        </a>
+      </div>
+
+      <StickyBuyBar
+        productName={product.name}
+        price={product.price}
+        hasOptions={product.options.length > 1}
+      />
     </div>
   );
 }

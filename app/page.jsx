@@ -31,7 +31,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <div className="wrap">
+      <div className="wrap shop-wrap">
         <div style={{ marginBottom: 20, display: "flex", flexWrap: "wrap", gap: 8 }}>
           <Link href="/reservations" className="btn" style={{ display: "inline-block" }}>
             🔍 내 주문 확인하기

@@ -123,17 +123,17 @@ export default function ProductBrowser({ products }) {
           {normalizedKeyword ? `"${keyword}" 검색 결과가 없어요.` : "조건에 맞는 상품이 없어요."}
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div className="product-grid">
           {shownProducts.map((p) => {
             const s = STATUS_STYLE[p.status] || STATUS_STYLE["주문가능"];
             return (
-              <Link key={p.id} href={`/product/${p.id}`} className="card">
+              <Link key={p.id} href={`/product/${p.id}`} className="product-card">
                 {p.image ? (
                   <img className="thumb" src={p.image} alt={p.name} />
                 ) : (
                   <div className="thumb" />
                 )}
-                <div style={{ flex: 1 }}>
+                <div className="product-card-body" style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 3 }}>{p.category}</div>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{p.name}</div>
                   <div className="price">

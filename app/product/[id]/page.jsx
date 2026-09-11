@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { getProductById, getProducts, STATUS_STYLE } from "@/lib/sheet";
 import CartLink from "../../CartLink";
 import NavIcons from "../../NavIcons";
@@ -116,7 +117,9 @@ export default async function ProductPage({ params }) {
         />
       )}
 
-      <ReviewSection productId={product.id} initial={reviewData} />
+      <Suspense fallback={null}>
+        <ReviewSection productId={product.id} initial={reviewData} />
+      </Suspense>
 
       <div id="bottom-order">
         <ProductOrderPanel product={product} />

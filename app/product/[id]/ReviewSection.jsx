@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 function Stars({ value, size = 14 }) {
@@ -41,6 +42,7 @@ function formatDate(iso) {
 }
 
 export default function ReviewSection({ productId, initial }) {
+  const searchParams = useSearchParams();
   const [reviews, setReviews] = useState(initial.reviews);
   const [average, setAverage] = useState(initial.average);
   const [showForm, setShowForm] = useState(false);
@@ -48,6 +50,16 @@ export default function ReviewSection({ productId, initial }) {
   const [content, setContent] = useState("");
   const [photoFile, setPhotoFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // "내 주문 확인"에서 배송완료 상품의 "리뷰 쓰기"를 누르면 ?review=1로 넘어와서
+  // 이 섹션까지 스크롤 + 작성폼이 바로 열려있게 한다.
+  useEffect(() => {
+    if (searchParams.get("review") === "1") {
+      setShowForm(true);
+      document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [error, setError] = useState("");
 
   const submit = async () => {
@@ -89,7 +101,7 @@ export default function ReviewSection({ productId, initial }) {
   };
 
   return (
-    <div style={{ marginTop: 24 }}>
+    <div id="reviews" style={{ marginTop: 24, scrollMarginTop: 16 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <h2 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>구매 후기</h2>

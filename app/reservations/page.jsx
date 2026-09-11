@@ -1,17 +1,28 @@
 import { cookies } from "next/headers";
-import { getOrders } from "@/lib/sheet";
+import { getOrders, getProducts } from "@/lib/sheet";
 import { verifySessionToken, normalizePhone, SESSION_COOKIE } from "@/lib/auth";
 import ReservationSearch from "./ReservationSearch";
 import NavIcons from "../NavIcons";
+
+// "상품명 (옵션) x수량" 형태의 구매품목 문자열에서 상품명만 뽑아낸다.
+function baseItemName(item) {
+  return String(item || "").replace(/\s*x\d+$/i, "").replace(/\s*\([^)]*\)$/, "").trim();
+}
 
 export default async function ReservationsPage() {
   const session = verifySessionToken(cookies().get(SESSION_COOKIE)?.value);
   const myPhone = session?.phone ? normalizePhone(session.phone) : "";
 
+  const [orders, products] = await Promise.all([
+    myPhone ? getOrders() : Promise.resolve([]),
+    myPhone ? getProducts() : Promise.resolve([]),
+  ]);
+  const nameToId = new Map(products.map((p) => [p.name, p.id]));
+
   const myOrders = myPhone
-    ? (await getOrders()).filter(
-        (o) => normalizePhone(o.senderPhone) === myPhone || normalizePhone(o.recipientPhone) === myPhone
-      )
+    ? orders
+        .filter((o) => normalizePhone(o.senderPhone) === myPhone || normalizePhone(o.recipientPhone) === myPhone)
+        .map((o) => ({ ...o, productId: nameToId.get(baseItemName(o.item)) || null }))
     : [];
 
   return (

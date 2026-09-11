@@ -275,10 +275,19 @@ export default function ReservationSearch({ orders, myPhone }) {
                               <span>{it.item}</span>
                               <span style={{ fontWeight: 700 }}>{it.totalAmount.toLocaleString()}원</span>
                             </div>
-                            <div style={{ display: "flex", gap: 6 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <span className="badge" style={{ background: s.bg, color: s.fg }}>{it.orderStatus}</span>
                               {it.trackingNumber && (
                                 <span style={{ fontSize: 12, color: "var(--muted)" }}>{it.courier} {it.trackingNumber}</span>
+                              )}
+                              {it.orderStatus === "배송완료" && it.productId && (
+                                <Link
+                                  href={`/product/${it.productId}?review=1#reviews`}
+                                  className="badge"
+                                  style={{ marginLeft: "auto", background: "var(--gold)", color: "var(--ink)", fontWeight: 800 }}
+                                >
+                                  ✍️ 리뷰 쓰기
+                                </Link>
                               )}
                             </div>
                           </div>

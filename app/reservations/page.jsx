@@ -1,13 +1,8 @@
 import { cookies } from "next/headers";
-import { getOrders, getProducts } from "@/lib/sheet";
+import { getOrders, getProducts, baseItemName } from "@/lib/sheet";
 import { verifySessionToken, normalizePhone, SESSION_COOKIE } from "@/lib/auth";
 import ReservationSearch from "./ReservationSearch";
 import NavIcons from "../NavIcons";
-
-// "상품명 (옵션) x수량" 형태의 구매품목 문자열에서 상품명만 뽑아낸다.
-function baseItemName(item) {
-  return String(item || "").replace(/\s*x\d+$/i, "").replace(/\s*\([^)]*\)$/, "").trim();
-}
 
 export default async function ReservationsPage() {
   const session = verifySessionToken(cookies().get(SESSION_COOKIE)?.value);

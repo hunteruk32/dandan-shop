@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import {
   createSessionToken,
   normalizePhone,
+  registerSocialMemberIfNew,
   SESSION_COOKIE,
   SESSION_MAX_AGE,
   PENDING_COOKIE,
@@ -45,6 +46,12 @@ export async function GET(req) {
   const phone = normalizePhone(profile.mobile || "");
 
   if (phone.length >= 9) {
+    try {
+      await registerSocialMemberIfNew(phone);
+    } catch {
+      // 회원 시트 등록 실패해도 로그인 자체는 막지 않는다
+    }
+
     const token = createSessionToken({ phone, socialId, nickname, provider: "naver" });
     cookies().set(SESSION_COOKIE, token, {
       httpOnly: true,

@@ -3,6 +3,7 @@ import {
   verifySessionToken,
   createSessionToken,
   normalizePhone,
+  registerSocialMemberIfNew,
   SESSION_COOKIE,
   SESSION_MAX_AGE,
   PENDING_COOKIE,
@@ -21,6 +22,12 @@ export async function POST(req) {
   const phone = normalizePhone(body.phone);
   if (phone.length < 9) {
     return Response.json({ ok: false, error: "전화번호를 정확히 입력해주세요." }, { status: 400 });
+  }
+
+  try {
+    await registerSocialMemberIfNew(phone);
+  } catch {
+    // 회원 시트 등록 실패해도 로그인 자체는 막지 않는다
   }
 
   const token = createSessionToken({

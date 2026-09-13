@@ -9,6 +9,7 @@ import ChuseokNotice from "./ChuseokNotice";
 import OpenChatBanner from "./OpenChatBanner";
 import CategoryQuickGrid from "./CategoryQuickGrid";
 import BestProducts from "./BestProducts";
+import MdPicks from "./MdPicks";
 import TrustStrip from "./TrustStrip";
 import StatsBanner from "./StatsBanner";
 import TrustBadges from "./TrustBadges";
@@ -86,6 +87,8 @@ export default async function HomePage() {
         ) : null}
 
         <BestProducts products={products} />
+
+        <MdPicks products={products} />
 
         <div id="products" style={{ marginTop: 40, scrollMarginTop: 90 }}>
           <div className="section-head">

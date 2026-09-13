@@ -31,6 +31,7 @@ export default function RootLayout({ children }) {
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'AW-18369032939');
+            gtag('config', 'G-QGE79YNL2M');
           `}
         </Script>
         <Suspense fallback={null}>

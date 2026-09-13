@@ -1,4 +1,5 @@
-import NavIcons from "../NavIcons";
+import SiteHeader from "../SiteHeader";
+import PageTitleRow from "../PageTitleRow";
 
 function Article({ title, children }) {
   return (
@@ -14,18 +15,10 @@ function Article({ title, children }) {
 export default function TermsPage() {
   return (
     <div>
-      <header className="header">
-        <div className="seal"><img src="/brand-icon.png" alt="단단상회" /></div>
-        <div>
-          <div className="eyebrow">DIRECT TRADE MARKET</div>
-          <h1 className="h1">이용약관</h1>
-        </div>
-        <div style={{ marginLeft: "auto", flexShrink: 0 }}>
-          <NavIcons />
-        </div>
-      </header>
+      <SiteHeader />
 
       <div className="wrap">
+        <PageTitleRow title="이용약관" />
         <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 20 }}>시행일: 2026년 9월 7일</p>
 
         <Article title="제1조 (목적)">

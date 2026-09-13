@@ -1,4 +1,5 @@
-import NavIcons from "../NavIcons";
+import SiteHeader from "../SiteHeader";
+import PageTitleRow from "../PageTitleRow";
 
 function Section({ title, children }) {
   return (
@@ -14,18 +15,10 @@ function Section({ title, children }) {
 export default function GuidePage() {
   return (
     <div>
-      <header className="header">
-        <div className="seal"><img src="/brand-icon.png" alt="단단상회" /></div>
-        <div>
-          <div className="eyebrow">DIRECT TRADE MARKET</div>
-          <h1 className="h1">이용안내</h1>
-        </div>
-        <div style={{ marginLeft: "auto", flexShrink: 0 }}>
-          <NavIcons />
-        </div>
-      </header>
+      <SiteHeader />
 
       <div className="wrap">
+        <PageTitleRow title="이용안내" />
         <Section title="1. 회원가입">
           <p>전화번호와 비밀번호만으로 간편하게 가입할 수 있어요. 회원가입은 주문(체크아웃) 시 한 번만 하면 되고, 이후에는 로그인만 하면 계속 이용할 수 있습니다.</p>
         </Section>

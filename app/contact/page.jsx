@@ -1,20 +1,13 @@
-import NavIcons from "../NavIcons";
+import SiteHeader from "../SiteHeader";
+import PageTitleRow from "../PageTitleRow";
 
 export default function ContactPage() {
   return (
     <div>
-      <header className="header">
-        <div className="seal"><img src="/brand-icon.png" alt="단단상회" /></div>
-        <div>
-          <div className="eyebrow">DIRECT TRADE MARKET</div>
-          <h1 className="h1">Contact</h1>
-        </div>
-        <div style={{ marginLeft: "auto", flexShrink: 0 }}>
-          <NavIcons />
-        </div>
-      </header>
+      <SiteHeader />
 
       <div className="wrap" style={{ fontSize: 14, lineHeight: 1.8 }}>
+        <PageTitleRow title="Contact" />
         <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>고객센터</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 24 }}>
           <div>운영시간: 월요일-금요일 10:00-17:00 (Lunch 12:00-13:00, 토·일·공휴일 휴무)</div>

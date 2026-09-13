@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { getProductById, getProducts, STATUS_STYLE } from "@/lib/sheet";
 import CartLink from "../../CartLink";
 import NavIcons from "../../NavIcons";
+import SiteHeader from "../../SiteHeader";
 import ProductOrderPanel from "./ProductOrderPanel";
 import ZoomableImage from "./ZoomableImage";
 import StickyBuyBar from "./StickyBuyBar";
@@ -37,13 +38,15 @@ export default async function ProductPage({ params }) {
   const reviewData = await getReviews(product.id);
 
   return (
-    <div className="wrap">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <NavIcons dark={false} />
-        <CartLink dark={false} />
-      </div>
+    <div>
+      <SiteHeader />
+      <div className="wrap">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <NavIcons dark={false} />
+          <CartLink dark={false} />
+        </div>
 
-      <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 12 }}>
         {product.image ? (
           <ZoomableImage className="detail-image" src={product.image} alt={product.name} />
         ) : (
@@ -152,6 +155,7 @@ export default async function ProductPage({ params }) {
         listPrice={product.listPrice}
         hasOptions={product.options.length > 1}
       />
+      </div>
     </div>
   );
 }

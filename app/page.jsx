@@ -2,10 +2,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getProducts, getProductSalesCounts, CATEGORIES } from "@/lib/sheet";
 import ProductBrowser from "./ProductBrowser";
-import CartLink from "./CartLink";
-import AuthStatus from "./AuthStatus";
 import ProductAssetsLink from "./ProductAssetsLink";
 import ChuseokNotice from "./ChuseokNotice";
+import SiteHeader from "./SiteHeader";
 import OpenChatBanner from "./OpenChatBanner";
 import CategoryQuickGrid from "./CategoryQuickGrid";
 import BestProducts from "./BestProducts";
@@ -25,28 +24,7 @@ export default async function HomePage() {
     <div>
       <ChuseokNotice />
 
-      <div className="site-header">
-        <div className="site-header-bar">
-          <div className="seal" style={{ width: 44, height: 44 }}>
-            <img src="/brand-icon.png" alt="단단상회" />
-          </div>
-          <div>
-            <div className="eyebrow" style={{ color: "var(--spice)" }}>DIRECT TRADE MARKET</div>
-            <div className="serif" style={{ fontSize: 19, fontWeight: 800, color: "var(--ink)" }}>단단상회</div>
-          </div>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
-            <AuthStatus dark={false} />
-            <CartLink dark={false} />
-          </div>
-        </div>
-        <nav className="site-nav">
-          <Link href="/">전체 카테고리</Link>
-          {presentCategories.map((c) => (
-            <Link key={c} href={`/?category=${encodeURIComponent(c)}#products`}>{c}</Link>
-          ))}
-          <Link href="/reservations" style={{ marginLeft: "auto", color: "var(--muted)" }}>내 주문 확인</Link>
-        </nav>
-      </div>
+      <SiteHeader presentCategories={presentCategories} />
 
       <div className="hero">
         <div className="hero-inner">

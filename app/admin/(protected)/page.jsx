@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getProducts } from "@/lib/sheet";
 import { getSummary, getTimeSeries, getProductPerformance, getHourlyDistribution, resolveRange, PERIODS } from "@/lib/analytics";
+import { getEngagementSummary, getEngagementByPage, isGa4Configured } from "@/lib/ga4";
 import AdminLogoutButton from "../AdminLogoutButton";
 
 export const dynamic = "force-dynamic";
@@ -41,19 +42,28 @@ function toDateInputValue(d) {
   return d.toISOString().slice(0, 10);
 }
 
+function formatDuration(sec) {
+  const s = Math.round(sec || 0);
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return m > 0 ? `${m}분 ${r}초` : `${r}초`;
+}
+
 export default async function AdminDashboardPage({ searchParams }) {
   const period = PERIODS[searchParams?.period] ? searchParams.period : "day";
   const from = searchParams?.from || "";
   const to = searchParams?.to || "";
   const range = resolveRange(period, from, to);
 
-  const [summary, visitSeries, orderSeries, productPerf, hourly, products] = await Promise.all([
+  const [summary, visitSeries, orderSeries, productPerf, hourly, products, engagement, engagementByPage] = await Promise.all([
     getSummary(range),
     getTimeSeries("pageview", period, range),
     getTimeSeries("order_item", period, range),
     getProductPerformance(range),
     getHourlyDistribution(range),
     getProducts(),
+    getEngagementSummary(range),
+    getEngagementByPage(range),
   ]);
 
   const productMap = new Map(products.map((p) => [p.id, p]));
@@ -74,6 +84,11 @@ export default async function AdminDashboardPage({ searchParams }) {
         <KpiCard label="누적 방문수" value={summary.totalVisits.toLocaleString()} />
         <KpiCard label="오늘 매출" value={`${summary.todaySales.toLocaleString()}원`} />
         <KpiCard label={`전환율 (${range.label})`} value={`${summary.conversionRate.toFixed(1)}%`} sub="방문 세션 대비 구매 세션 비율" />
+        <KpiCard
+          label={`평균 참여시간 (${range.label})`}
+          value={engagement ? formatDuration(engagement.avgEngagementSec) : "-"}
+          sub={engagement ? `세션 ${engagement.sessions.toLocaleString()}개 · 참여율 ${engagement.engagementRate.toFixed(1)}%` : "GA4 연동 필요"}
+        />
       </div>
 
       <div className="section-head">
@@ -193,6 +208,54 @@ export default async function AdminDashboardPage({ searchParams }) {
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>{row.purchaseQty.toLocaleString()}</td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>{row.sellThroughRate.toFixed(1)}%</td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>{row.revenue.toLocaleString()}원</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="section-head">
+        <h2 className="section-title">페이지별 참여시간 (GA4)</h2>
+        <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label} · 참여시간 많은 순 상위 10개</div>
+      </div>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden", marginBottom: 40 }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: "#F6F4EE", textAlign: "left" }}>
+                <th style={{ padding: "10px 14px" }}>페이지</th>
+                <th style={{ padding: "10px 14px", textAlign: "right" }}>세션수</th>
+                <th style={{ padding: "10px 14px", textAlign: "right" }}>평균 참여시간</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!isGa4Configured() ? (
+                <tr>
+                  <td colSpan={3} style={{ padding: 20, textAlign: "center", color: "var(--muted)" }}>
+                    GA4 서비스 계정 연동이 필요해요. (GA4_PROPERTY_ID / GA4_SERVICE_ACCOUNT_KEY 환경변수 미설정)
+                  </td>
+                </tr>
+              ) : engagementByPage.length === 0 ? (
+                <tr>
+                  <td colSpan={3} style={{ padding: 20, textAlign: "center", color: "var(--muted)" }}>
+                    이 기간에는 쌓인 데이터가 없어요.
+                  </td>
+                </tr>
+              ) : (
+                engagementByPage.map((row) => {
+                  const match = row.pagePath.match(/^\/product\/([^/?#]+)/);
+                  const product = match ? productMap.get(match[1]) : null;
+                  return (
+                    <tr key={row.pagePath} style={{ borderTop: "1px solid var(--line)" }}>
+                      <td style={{ padding: "10px 14px", fontWeight: 700 }}>
+                        {product ? product.name : row.pagePath}
+                        {product && <span style={{ fontWeight: 400, color: "var(--muted)" }}> ({row.pagePath})</span>}
+                      </td>
+                      <td style={{ padding: "10px 14px", textAlign: "right" }}>{row.sessions.toLocaleString()}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "right" }}>{formatDuration(row.avgEngagementSec)}</td>
                     </tr>
                   );
                 })

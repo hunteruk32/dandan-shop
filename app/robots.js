@@ -5,6 +5,6 @@ export default function robots() {
       allow: "/",
       disallow: ["/admin", "/api", "/checkout", "/cart", "/reservations", "/login", "/signup", "/auth"],
     },
-    sitemap: "https://dandan-shop.co.kr/sitemap.xml",
+    sitemap: "https://www.dandan-shop.co.kr/sitemap.xml",
   };
 }

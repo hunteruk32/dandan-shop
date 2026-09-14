@@ -6,7 +6,7 @@ import Footer from "./Footer";
 import PageviewTracker from "./PageviewTracker";
 
 export const metadata = {
-  metadataBase: new URL("https://dandan-shop.co.kr"),
+  metadataBase: new URL("https://www.dandan-shop.co.kr"),
   title: "단단상회 | 주문 검색 · 상품리스트",
   description: "단단상회 직거래 마켓 — 오늘의 상품과 주문 확인",
   openGraph: {

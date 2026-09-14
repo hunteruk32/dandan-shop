@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "../CartProvider";
 import PageTitleRow from "../PageTitleRow";
 import TrustBadges from "../TrustBadges";
 import AddressSearchField, { combineAddress } from "../AddressSearchField";
+import TossPaymentWidget from "./TossPaymentWidget";
 
 export default function CheckoutForm() {
   const router = useRouter();
@@ -27,6 +28,8 @@ export default function CheckoutForm() {
   const [errorMsg, setErrorMsg] = useState("");
   const [orderId, setOrderId] = useState("");
   const [orderTotal, setOrderTotal] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState("bank"); // bank | card
+  const requestTossPaymentRef = useRef(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -84,39 +87,70 @@ export default function CheckoutForm() {
     form.recipientPhone.trim() &&
     recipientAddress;
 
+  const createOrder = async () => {
+    const res = await fetch("/api/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        senderName: form.senderName.trim(),
+        senderAddress,
+        recipientName: form.recipientName.trim(),
+        recipientPhone: form.recipientPhone.trim(),
+        recipientAddress,
+        note: form.note.trim(),
+        items: cart.items,
+        paymentMethod,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || "실패");
+    return { orderId: data.orderId || "", totalAmount: data.totalAmount || cart.total };
+  };
+
+  const submitBankTransfer = async () => {
+    const { orderId: finalOrderId, totalAmount: finalTotal } = await createOrder();
+    setOrderId(finalOrderId);
+    setOrderTotal(finalTotal);
+    cart.clear();
+    setState("done");
+    if (typeof window !== "undefined" && typeof window.gtag === "function") {
+      window.gtag("event", "conversion", {
+        send_to: "AW-18369032939/qjyfCIuoyfIcEOvlhLdE",
+        value: finalTotal,
+        currency: "KRW",
+        transaction_id: finalOrderId || `${form.senderName}-${Date.now()}`,
+      });
+    }
+  };
+
+  const submitCardPayment = async () => {
+    if (!requestTossPaymentRef.current) throw new Error("결제창을 아직 불러오는 중이에요. 잠시 후 다시 시도해주세요.");
+    const { orderId: finalOrderId, totalAmount: finalTotal } = await createOrder();
+    const firstItemName = cart.items[0]?.productName || "상품";
+    const orderName = cart.items.length > 1 ? `${firstItemName} 외 ${cart.items.length - 1}건` : firstItemName;
+    const origin = window.location.origin;
+
+    await requestTossPaymentRef.current({
+      orderId: finalOrderId,
+      orderName,
+      amount: { value: finalTotal, currency: "KRW" },
+      customerName: form.senderName.trim(),
+      customerMobilePhone: String(phone || "").replace(/[^0-9]/g, ""),
+      successUrl: `${origin}/checkout/success`,
+      failUrl: `${origin}/checkout/fail`,
+    });
+    // 성공하면 토스 결제창으로 리다이렉트되어 이 지점 이후 코드는 실행되지 않는다.
+  };
+
   const submit = async () => {
     if (!requiredFilled || !cart || cart.items.length === 0) return;
     setState("submitting");
     setErrorMsg("");
     try {
-      const res = await fetch("/api/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          senderName: form.senderName.trim(),
-          senderAddress,
-          recipientName: form.recipientName.trim(),
-          recipientPhone: form.recipientPhone.trim(),
-          recipientAddress,
-          note: form.note.trim(),
-          items: cart.items,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || "실패");
-      const finalOrderId = data.orderId || "";
-      const finalTotal = data.totalAmount || cart.total;
-      setOrderId(finalOrderId);
-      setOrderTotal(finalTotal);
-      cart.clear();
-      setState("done");
-      if (typeof window !== "undefined" && typeof window.gtag === "function") {
-        window.gtag("event", "conversion", {
-          send_to: "AW-18369032939/qjyfCIuoyfIcEOvlhLdE",
-          value: finalTotal,
-          currency: "KRW",
-          transaction_id: finalOrderId || `${form.senderName}-${Date.now()}`,
-        });
+      if (paymentMethod === "card") {
+        await submitCardPayment();
+      } else {
+        await submitBankTransfer();
       }
     } catch (err) {
       setState("error");
@@ -239,6 +273,35 @@ export default function CheckoutForm() {
           <span style={{ color: "var(--spice)" }}>{cart.total.toLocaleString()}원</span>
         </div>
 
+        <div style={{ fontSize: 13, fontWeight: 800, marginTop: 8 }}>결제 방법</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            className={`tab ${paymentMethod === "bank" ? "active" : ""}`}
+            style={{ flex: 1, padding: "10px 0" }}
+            onClick={() => setPaymentMethod("bank")}
+          >
+            계좌이체
+          </button>
+          <button
+            type="button"
+            className={`tab ${paymentMethod === "card" ? "active" : ""}`}
+            style={{ flex: 1, padding: "10px 0" }}
+            onClick={() => setPaymentMethod("card")}
+          >
+            카드결제
+          </button>
+        </div>
+
+        {paymentMethod === "card" && (
+          <TossPaymentWidget
+            amount={cart.total}
+            onReady={(requestPayment) => {
+              requestTossPaymentRef.current = requestPayment;
+            }}
+          />
+        )}
+
         {state === "error" && (
           <p style={{ color: "var(--spice)", fontSize: 13 }}>{errorMsg}</p>
         )}
@@ -248,7 +311,7 @@ export default function CheckoutForm() {
         </div>
 
         <button className="btn" onClick={submit} disabled={state === "submitting" || !requiredFilled}>
-          {state === "submitting" ? "접수 중…" : "주문 접수하고 계좌번호 받기"}
+          {state === "submitting" ? "처리 중…" : paymentMethod === "card" ? "결제하기" : "주문 접수하고 계좌번호 받기"}
         </button>
       </div>
     </div>

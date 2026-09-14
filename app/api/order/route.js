@@ -61,6 +61,7 @@ export async function POST(req) {
     recipientAddress: String(body.recipientAddress).trim(),
     note: String(body.note || "").trim(),
     items: lineItems,
+    paymentMethod: body.paymentMethod === "card" ? "card" : "bank",
   };
 
   const res = await fetch(url, {

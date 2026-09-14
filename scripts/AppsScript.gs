@@ -48,6 +48,7 @@ function doPost(e) {
   const body = JSON.parse(e.postData.contents);
   if (body.action === "update") return handleUpdate(body);
   if (body.action === "statusRequest") return handleStatusRequest(body);
+  if (body.action === "confirmCardPayment") return handleConfirmCardPayment(body);
   return handleCreate(body);
 }
 
@@ -82,7 +83,7 @@ function handleCreate(body) {
       it.price || "",
       it.shippingFee || 0,
       it.totalAmount || "",
-      "입금대기",
+      body.paymentMethod === "card" ? "카드결제대기" : "입금대기",
       "입금확인중",
       "",
       "",
@@ -246,6 +247,51 @@ function handleStatusRequest(body) {
   historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
 
   return jsonOutput({ ok: true, newStatus: newStatus });
+}
+
+/**
+ * 토스페이먼츠 카드결제가 실제로 승인된 뒤 호출됨 (action: "confirmCardPayment").
+ * body: { orderId, paymentKey, amount }
+ *
+ * 계좌이체와 달리 입금 확인을 사람이 기다릴 필요가 없어서, 결제상태를 바로
+ * "카드결제완료"로, 발주 상태를 바로 "배송준비중"으로 올린다(입금확인중 단계 생략).
+ * amount는 이 주문(orderId)에 쌓인 합계금액의 합과 반드시 일치해야 승인 처리한다 —
+ * 금액이 다르면 위조된 요청일 수 있으므로 거부한다.
+ */
+function handleConfirmCardPayment(body) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const data = sheet.getDataRange().getValues();
+  const orderId = String(body.orderId || "").trim();
+  const paymentKey = String(body.paymentKey || "").trim();
+  const amount = Number(body.amount);
+
+  const rowNumbers = [];
+  let totalAmount = 0;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === orderId) {
+      rowNumbers.push(i + 1);
+      totalAmount += Number(data[i][13]) || 0; // 합계금액
+    }
+  }
+  if (rowNumbers.length === 0) {
+    return jsonOutput({ ok: false, error: "주문을 찾을 수 없어요." });
+  }
+  if (totalAmount !== amount) {
+    return jsonOutput({ ok: false, error: "결제 금액이 주문 금액과 일치하지 않아요." });
+  }
+
+  const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  const historyEntry = timestamp + " [토스페이먼츠] 카드결제 승인 완료 (paymentKey: " + paymentKey + ")";
+
+  rowNumbers.forEach(function (r) {
+    sheet.getRange(r, 15).setValue("카드결제완료");
+    sheet.getRange(r, 16).setValue("배송준비중");
+    const historyCell = sheet.getRange(r, 20);
+    const prevHistory = String(historyCell.getValue() || "").trim();
+    historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
+  });
+
+  return jsonOutput({ ok: true });
 }
 
 function updateMemberStats(phone) {

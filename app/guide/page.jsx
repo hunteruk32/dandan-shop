@@ -1,6 +1,11 @@
 import SiteHeader from "../SiteHeader";
 import PageTitleRow from "../PageTitleRow";
 
+export const metadata = {
+  title: "이용안내 | 단단상회",
+  description: "단단상회 회원가입, 주문, 결제, 배송, 교환·반품 안내",
+};
+
 function Section({ title, children }) {
   return (
     <section style={{ marginBottom: 26 }}>

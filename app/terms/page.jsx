@@ -1,6 +1,11 @@
 import SiteHeader from "../SiteHeader";
 import PageTitleRow from "../PageTitleRow";
 
+export const metadata = {
+  title: "이용약관 | 단단상회",
+  description: "단단상회 서비스 이용약관",
+};
+
 function Article({ title, children }) {
   return (
     <section style={{ marginBottom: 20 }}>

@@ -19,6 +19,25 @@ export async function generateStaticParams() {
   return products.map((p) => ({ id: p.id }));
 }
 
+export async function generateMetadata({ params }) {
+  const product = await getProductById(params.id);
+  if (!product) return {};
+
+  const description = product.description
+    ? product.description.slice(0, 100)
+    : `${product.name} — 단단상회 산지 직송 도소매`;
+
+  return {
+    title: `${product.name} | 단단상회`,
+    description,
+    openGraph: {
+      title: product.name,
+      description,
+      images: product.image ? [product.image] : undefined,
+    },
+  };
+}
+
 export default async function ProductPage({ params }) {
   const product = await getProductById(params.id);
 

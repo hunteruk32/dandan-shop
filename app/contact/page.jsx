@@ -1,6 +1,11 @@
 import SiteHeader from "../SiteHeader";
 import PageTitleRow from "../PageTitleRow";
 
+export const metadata = {
+  title: "고객센터 | 단단상회",
+  description: "단단상회 고객센터 연락처 및 사업자 정보",
+};
+
 export default function ContactPage() {
   return (
     <div>

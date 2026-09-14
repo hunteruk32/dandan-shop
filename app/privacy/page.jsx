@@ -1,6 +1,11 @@
 import SiteHeader from "../SiteHeader";
 import PageTitleRow from "../PageTitleRow";
 
+export const metadata = {
+  title: "개인정보처리방침 | 단단상회",
+  description: "단단상회 개인정보처리방침",
+};
+
 function Article({ title, children }) {
   return (
     <section style={{ marginBottom: 20 }}>

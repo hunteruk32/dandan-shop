@@ -29,7 +29,9 @@ export default function CheckoutForm() {
   const [orderId, setOrderId] = useState("");
   const [orderTotal, setOrderTotal] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("bank"); // bank | card
+  const [showCardNotice, setShowCardNotice] = useState(false);
   const requestTossPaymentRef = useRef(null);
+  const cardPaymentEnabled = process.env.NEXT_PUBLIC_CARD_PAYMENT_ENABLED === "true";
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -287,11 +289,41 @@ export default function CheckoutForm() {
             type="button"
             className={`tab ${paymentMethod === "card" ? "active" : ""}`}
             style={{ flex: 1, padding: "10px 0" }}
-            onClick={() => setPaymentMethod("card")}
+            onClick={() => (cardPaymentEnabled ? setPaymentMethod("card") : setShowCardNotice(true))}
           >
-            카드결제
+            카드결제{!cardPaymentEnabled && " (준비중)"}
           </button>
         </div>
+
+        {showCardNotice && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 50,
+              padding: 20,
+            }}
+            onClick={() => setShowCardNotice(false)}
+          >
+            <div
+              className="card"
+              style={{ flexDirection: "column", alignItems: "flex-start", gap: 10, maxWidth: 320, background: "#fff", padding: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ fontWeight: 800, fontSize: 15 }}>카드결제 준비 중이에요</div>
+              <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
+                현재 PG사(결제대행사) 계약 심사가 진행 중이라, 지금은 계좌이체로만 주문이 가능해요. 양해 부탁드립니다.
+              </p>
+              <button className="btn" style={{ width: "100%" }} onClick={() => setShowCardNotice(false)}>
+                확인
+              </button>
+            </div>
+          </div>
+        )}
 
         {paymentMethod === "card" && (
           <TossPaymentWidget

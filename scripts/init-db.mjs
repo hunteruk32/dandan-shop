@@ -43,7 +43,21 @@ async function main() {
   `;
   await sql`CREATE INDEX IF NOT EXISTS reviews_product_idx ON reviews (product_id, hidden, created_at)`;
 
-  console.log("done: events, reviews tables ready");
+  // 매입처별 발주 이력. 같은 주문의 같은 품목을 다음날 또 발주 목록에 올리지 않기 위한 중복 방지용.
+  await sql`
+    CREATE TABLE IF NOT EXISTS supplier_order_log (
+      id BIGSERIAL PRIMARY KEY,
+      order_id TEXT NOT NULL,
+      item_name TEXT NOT NULL,
+      supplier TEXT NOT NULL,
+      method TEXT NOT NULL,
+      ordered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (order_id, item_name)
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS supplier_order_log_supplier_idx ON supplier_order_log (supplier, ordered_at)`;
+
+  console.log("done: events, reviews, supplier_order_log tables ready");
 }
 
 main().catch((err) => {

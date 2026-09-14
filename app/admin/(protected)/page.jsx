@@ -74,6 +74,7 @@ export default async function AdminDashboardPage({ searchParams }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 className="serif" style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>단단상회 분석 대시보드</h1>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <Link href="/admin/purchase-orders" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>오늘의 발주</Link>
           <Link href="/admin/reviews" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>리뷰 관리</Link>
           <AdminLogoutButton />
         </div>

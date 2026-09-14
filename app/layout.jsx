@@ -14,6 +14,11 @@ export const metadata = {
     description: "단단상회 직거래 마켓 — 오늘의 상품과 주문 확인",
     siteName: "단단상회",
   },
+  verification: {
+    other: {
+      "naver-site-verification": "b5ba10aafb80a3b67291dae6fe419c0439f3fd45",
+    },
+  },
 };
 
 export default function RootLayout({ children }) {

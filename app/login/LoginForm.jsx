@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageTitleRow from "../PageTitleRow";
+
+const SOCIAL_ERROR_MESSAGES = {
+  kakao_cancelled: "카카오 로그인이 취소됐어요.",
+  kakao_token: "카카오 인증에 실패했어요. 잠시 후 다시 시도해주세요.",
+  kakao_profile: "카카오 프로필 정보를 가져오지 못했어요.",
+  naver_cancelled: "네이버 로그인이 취소됐어요.",
+  naver_token: "네이버 인증에 실패했어요. 잠시 후 다시 시도해주세요.",
+  naver_profile: "네이버 프로필 정보를 가져오지 못했어요.",
+};
 
 export default function LoginForm() {
   const router = useRouter();
@@ -13,6 +22,12 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const code = params.get("error");
+    if (code) setError(SOCIAL_ERROR_MESSAGES[code] || "로그인 중 오류가 발생했어요.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const submit = async () => {
     if (!phone.trim() || !password.trim()) return;

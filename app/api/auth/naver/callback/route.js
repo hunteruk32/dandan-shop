@@ -29,6 +29,7 @@ export async function GET(req) {
   const tokenRes = await fetch(tokenUrl);
   const tokenData = await tokenRes.json();
   if (!tokenRes.ok || !tokenData.access_token) {
+    console.error("naver oauth token exchange failed:", tokenRes.status, JSON.stringify(tokenData));
     return Response.redirect(`${origin}/login?error=naver_token`, 302);
   }
 
@@ -38,6 +39,7 @@ export async function GET(req) {
   const profileData = await profileRes.json();
   const profile = profileData.response;
   if (!profileRes.ok || profileData.resultcode !== "00" || !profile?.id) {
+    console.error("naver oauth profile fetch failed:", profileRes.status, JSON.stringify(profileData));
     return Response.redirect(`${origin}/login?error=naver_profile`, 302);
   }
 

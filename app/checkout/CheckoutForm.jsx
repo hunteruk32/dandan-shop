@@ -8,6 +8,7 @@ import PageTitleRow from "../PageTitleRow";
 import TrustBadges from "../TrustBadges";
 import AddressSearchField, { combineAddress } from "../AddressSearchField";
 import TossPaymentWidget from "./TossPaymentWidget";
+import { isCardPaymentAllowed } from "@/lib/cardPayment";
 
 export default function CheckoutForm() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function CheckoutForm() {
   const [paymentMethod, setPaymentMethod] = useState("bank"); // bank | card
   const [showCardNotice, setShowCardNotice] = useState(false);
   const requestTossPaymentRef = useRef(null);
-  const cardPaymentEnabled = process.env.NEXT_PUBLIC_CARD_PAYMENT_ENABLED === "true";
+  const cardPaymentEnabled = isCardPaymentAllowed(phone);
 
   useEffect(() => {
     fetch("/api/auth/me")

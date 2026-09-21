@@ -143,6 +143,21 @@ export default async function ProductPage({ params }) {
         <ReviewSection productId={product.id} initial={reviewData} />
       </Suspense>
 
+      <div
+        id="shipping-policy"
+        style={{ marginTop: 20, padding: "14px 16px", border: "1px solid var(--line)", borderRadius: 12, background: "#fff", fontSize: 13, lineHeight: 1.7 }}
+      >
+        <div style={{ fontWeight: 800, marginBottom: 4 }}>배송 안내</div>
+        <div style={{ color: "var(--muted)" }}>
+          결제(입금 확인) 후 <b style={{ color: "var(--ink)" }}>공휴일 제외 2일 이내</b>에 발송돼요. 발송 후 택배 소요일이 추가되며, 도서·산간 지역은 추가 배송비가 발생할 수 있어요.
+        </div>
+        <div style={{ fontWeight: 800, margin: "10px 0 4px" }}>교환·환불 안내</div>
+        <div style={{ color: "var(--muted)" }}>
+          신선식품 특성상 단순 변심에 의한 교환·반품은 제한될 수 있어요. 상품 하자·오배송·파손이 있으면 수령 후 24시간 이내에 사진과 함께 연락주시면 재발송 또는 환불해드립니다. 자세한 내용은{" "}
+          <Link href="/guide" style={{ color: "var(--accent)", fontWeight: 700 }}>이용안내</Link>를 확인해주세요.
+        </div>
+      </div>
+
       <div id="bottom-order">
         <ProductOrderPanel product={product} />
 

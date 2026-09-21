@@ -3,6 +3,7 @@ import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
 import { resolveShippingFees } from "@/lib/shipping";
 import { VISITOR_COOKIE } from "@/lib/constants";
 import { sql } from "@/lib/db";
+import { isCardPaymentAllowed } from "@/lib/cardPayment";
 
 const REQUIRED_FIELDS = ["senderName", "senderAddress", "recipientName", "recipientPhone", "recipientAddress"];
 
@@ -13,6 +14,10 @@ export async function POST(req) {
   }
 
   const body = await req.json();
+
+  if (body.paymentMethod === "card" && !isCardPaymentAllowed(session.phone)) {
+    return Response.json({ ok: false, error: "카드결제는 아직 준비 중이에요. 계좌이체로 주문해주세요." }, { status: 403 });
+  }
 
   for (const key of REQUIRED_FIELDS) {
     if (!String(body[key] || "").trim()) {

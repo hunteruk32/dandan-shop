@@ -149,7 +149,7 @@ export default async function ProductPage({ params }) {
       >
         <div style={{ fontWeight: 800, marginBottom: 4 }}>배송 안내</div>
         <div style={{ color: "var(--muted)" }}>
-          결제(입금 확인) 후 <b style={{ color: "var(--ink)" }}>공휴일 제외 2일 이내</b>에 발송돼요. 발송 후 택배 소요일이 추가되며, 도서·산간 지역은 추가 배송비가 발생할 수 있어요.
+          결제(입금 확인) 후 <b style={{ color: "var(--ink)" }}>공휴일 제외 2일 이내</b>에 발송돼요. 발송 후 택배 소요일이 추가되며, 도서·산간 지역은 추가 배송비가 발생할 수 있어요. 안내된 발송 예정일보다 3일 이상 지연되면 취소·전액 환불이 가능해요.
         </div>
         <div style={{ fontWeight: 800, margin: "10px 0 4px" }}>교환·환불 안내</div>
         <div style={{ color: "var(--muted)" }}>

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "dandan-notice-hide-date";
-// 9월 23일(한국시간)까지만 노출하고, 24일 0시부터는 자동으로 뜨지 않는다.
-const NOTICE_END = new Date("2026-09-24T00:00:00+09:00").getTime();
+// 배송 재개일(9/28)까지는 노출하고, 29일 0시부터는 자동으로 뜨지 않는다.
+const NOTICE_END = new Date("2026-09-29T00:00:00+09:00").getTime();
 
 function todayString() {
   const d = new Date();

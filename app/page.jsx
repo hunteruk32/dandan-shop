@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { getProducts, getProductSalesCounts, CATEGORIES } from "@/lib/sheet";
 import ProductBrowser from "./ProductBrowser";
 import ProductAssetsLink from "./ProductAssetsLink";
-import ChuseokNotice from "./ChuseokNotice";
 import SiteHeader from "./SiteHeader";
 import OpenChatBanner from "./OpenChatBanner";
 import CategoryQuickGrid from "./CategoryQuickGrid";
@@ -22,8 +21,6 @@ export default async function HomePage() {
 
   return (
     <div>
-      <ChuseokNotice />
-
       <SiteHeader presentCategories={presentCategories} />
 
       <div className="hero">

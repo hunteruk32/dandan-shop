@@ -253,3 +253,4 @@ npm run dev
 시트에 상품 추가 → 최대 1분 안에 사이트에 반영됩니다. 더 즉시 반영이 필요하면
 Google Apps Script로 Vercel의 On-Demand Revalidation을 호출하는 방법도 있는데,
 필요하시면 다음 단계로 추가해드릴게요.
+

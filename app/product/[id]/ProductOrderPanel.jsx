@@ -12,6 +12,7 @@ export default function ProductOrderPanel({ product }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
+  const purchasable = product.status === "주문가능";
   const selectedOption = product.options[Number(optionIndex)] || null;
   const unitPrice = selectedOption ? selectedOption.price : product.price;
   const discount = getDiscount(selectedOption?.listPrice, unitPrice);
@@ -29,12 +30,14 @@ export default function ProductOrderPanel({ product }) {
   });
 
   const addToCart = () => {
+    if (!purchasable) return;
     cart.addItem(buildItem());
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
 
   const buyNow = () => {
+    if (!purchasable) return;
     cart.addItem(buildItem());
     router.push("/checkout");
   };
@@ -79,16 +82,35 @@ export default function ProductOrderPanel({ product }) {
         </span>
       </div>
 
+      {!purchasable && (
+        <p style={{ fontSize: 13, color: "var(--spice)", fontWeight: 700, margin: 0 }}>
+          {product.status === "품절" ? "일시 품절된 상품이에요." : `현재 ${product.status} 상품이라 주문할 수 없어요.`}
+        </p>
+      )}
+
       <div style={{ display: "flex", gap: 8 }}>
         <button
           className="btn"
-          style={{ flex: 1, background: "#fff", color: "var(--accent)", border: "1px solid var(--accent)" }}
+          style={{
+            flex: 1,
+            background: "#fff",
+            color: "var(--accent)",
+            border: "1px solid var(--accent)",
+            opacity: purchasable ? 1 : 0.5,
+            cursor: purchasable ? "pointer" : "not-allowed",
+          }}
           onClick={addToCart}
+          disabled={!purchasable}
         >
           {added ? "담았어요 ✅" : "장바구니에 담기"}
         </button>
-        <button className="btn" style={{ flex: 1 }} onClick={buyNow}>
-          바로 주문하기
+        <button
+          className="btn"
+          style={{ flex: 1, opacity: purchasable ? 1 : 0.5, cursor: purchasable ? "pointer" : "not-allowed" }}
+          onClick={buyNow}
+          disabled={!purchasable}
+        >
+          {purchasable ? "바로 주문하기" : product.status}
         </button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { resolveShippingFees } from "@/lib/shipping";
 import { VISITOR_COOKIE } from "@/lib/constants";
 import { sql } from "@/lib/db";
 import { isCardPaymentAllowed } from "@/lib/cardPayment";
+import { getProducts } from "@/lib/sheet";
 
 const REQUIRED_FIELDS = ["senderName", "senderAddress", "recipientName", "recipientPhone", "recipientAddress"];
 
@@ -28,6 +29,14 @@ export async function POST(req) {
   const items = Array.isArray(body.items) ? body.items : [];
   if (items.length === 0) {
     return Response.json({ ok: false, error: "주문할 상품이 없어요." }, { status: 400 });
+  }
+
+  // 클라이언트가 품절·시즌종료 상품을 끼워 보내는 경우를 막기 위해 서버에서도 현재 상태를 다시 확인한다.
+  const products = await getProducts();
+  const statusById = new Map(products.map((p) => [p.id, p.status]));
+  const blocked = items.find((it) => it.productId && statusById.get(it.productId) !== "주문가능");
+  if (blocked) {
+    return Response.json({ ok: false, error: `${blocked.productName || "상품"}은(는) 지금 주문할 수 없어요.` }, { status: 409 });
   }
 
   const url = process.env.ORDER_WEBHOOK_URL;

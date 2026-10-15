@@ -4,7 +4,7 @@ import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
 import { getProductById } from "@/lib/sheet";
 import { verifyPurchaseAndGetAuthorName, createReview } from "@/lib/reviews";
 
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_PHOTO_BYTES = 4 * 1024 * 1024; // 4MB (Vercel 플랫폼 요청 본문 제한보다 여유있게 낮춰서, 플랫폼이 먼저 차단하는 대신 이 체크가 먼저 걸리게 함)
 const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 export async function POST(req) {
@@ -44,7 +44,7 @@ export async function POST(req) {
       return Response.json({ ok: false, error: "사진은 jpg/png/webp/gif 형식만 가능해요." }, { status: 400 });
     }
     if (photo.size > MAX_PHOTO_BYTES) {
-      return Response.json({ ok: false, error: "사진 용량은 5MB 이하로 올려주세요." }, { status: 400 });
+      return Response.json({ ok: false, error: "사진 용량은 4MB 이하로 올려주세요." }, { status: 400 });
     }
     const ext = photo.type.split("/")[1] || "jpg";
     const blob = await put(`reviews/${productId}-${Date.now()}.${ext}`, photo, { access: "public" });

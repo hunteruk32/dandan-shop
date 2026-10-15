@@ -41,6 +41,30 @@ function formatDate(iso) {
   return `${d.getUTCFullYear()}.${String(d.getUTCMonth() + 1).padStart(2, "0")}.${String(d.getUTCDate()).padStart(2, "0")}`;
 }
 
+// 휴대폰 사진은 보통 수 MB~십수 MB라 서버/플랫폼 업로드 용량 제한에 쉽게 걸린다.
+// 업로드 전 브라우저에서 긴 변을 기준으로 리사이즈 + JPEG 재인코딩해서 용량을 크게 줄인다.
+async function compressImage(file, maxSize = 1600, quality = 0.8) {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) return file;
+
+  const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(bitmap, 0, 0, width, height);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+  if (!blob || blob.size >= file.size) return file;
+
+  return new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
+}
+
 export default function ReviewSection({ productId, initial }) {
   const searchParams = useSearchParams();
   const [reviews, setReviews] = useState(initial.reviews);
@@ -72,10 +96,14 @@ export default function ReviewSection({ productId, initial }) {
       formData.append("productId", productId);
       formData.append("rating", String(rating));
       formData.append("content", content.trim());
-      if (photoFile) formData.append("photo", photoFile);
+      if (photoFile) {
+        const compressed = await compressImage(photoFile);
+        formData.append("photo", compressed);
+      }
 
       const res = await fetch("/api/reviews", { method: "POST", body: formData });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
+      if (!data) throw new Error("사진 용량이 너무 커서 등록에 실패했어요. 더 작은 사진으로 다시 시도해주세요.");
       if (!res.ok || !data.ok) throw new Error(data.error || "등록에 실패했어요.");
 
       const newReview = {

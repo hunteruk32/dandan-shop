@@ -53,14 +53,23 @@ export default function ProductBrowser({ products }) {
     .filter((p) => activeStatus === "전체" || p.status === activeStatus)
     .filter((p) => !normalizedKeyword || p.name.toLowerCase().includes(normalizedKeyword));
 
-  const shownProducts = [...filtered].sort((a, b) => {
-    if (sortBy === "salesDesc") return (b.salesCount || 0) - (a.salesCount || 0);
-    if (sortBy === "priceAsc") return a.price - b.price;
-    if (sortBy === "priceDesc") return b.price - a.price;
-    if (sortBy === "name") return a.name.localeCompare(b.name, "ko");
-    return 0; // latest: 원래 시트 순서를 뒤집어서 최근 등록한 상품이 먼저 오게
-  });
-  if (sortBy === "latest") shownProducts.reverse();
+  const sortGroup = (group) => {
+    const sorted = [...group].sort((a, b) => {
+      if (sortBy === "salesDesc") return (b.salesCount || 0) - (a.salesCount || 0);
+      if (sortBy === "priceAsc") return a.price - b.price;
+      if (sortBy === "priceDesc") return b.price - a.price;
+      if (sortBy === "name") return a.name.localeCompare(b.name, "ko");
+      return 0; // latest: 원래 시트 순서를 뒤집어서 최근 등록한 상품이 먼저 오게
+    });
+    if (sortBy === "latest") sorted.reverse();
+    return sorted;
+  };
+
+  // 시즌종료 상품은 구매는 안 되지만 재시즌 때 다시 찾아올 수 있게 완전히 숨기진 않고,
+  // 기본 목록에서는 눈에 덜 띄게 맨 뒤로 보낸다("상태: 시즌종료" 탭에서는 그대로 모아볼 수 있음).
+  const notEnded = filtered.filter((p) => p.status !== "시즌종료");
+  const ended = filtered.filter((p) => p.status === "시즌종료");
+  const shownProducts = [...sortGroup(notEnded), ...sortGroup(ended)];
 
   return (
     <>

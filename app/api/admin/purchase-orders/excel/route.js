@@ -3,6 +3,8 @@ import { ADMIN_SESSION_COOKIE, isValidAdminSession } from "@/lib/adminAuth";
 import { getPendingPurchaseOrders, markPurchaseOrdered } from "@/lib/purchaseOrders";
 import { generateSupplierOrderExcel, isSupportedSupplier } from "@/lib/excelOrderForms";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req) {
   const token = cookies().get(ADMIN_SESSION_COOKIE)?.value;
   if (!isValidAdminSession(token)) {

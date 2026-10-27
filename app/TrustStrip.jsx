@@ -4,7 +4,7 @@ const ITEMS = [
     icon: <><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></>,
   },
   {
-    label: "당일 수급 · 당일 발송",
+    label: "오전 7시 전 주문 시 당일발송·익일도착",
     icon: <><rect x="1" y="7" width="15" height="10" rx="1.5" /><path d="M16 10h4l3 3v4h-7z" /><circle cx="6" cy="19" r="1.6" /><circle cx="18.5" cy="19" r="1.6" /></>,
   },
   {

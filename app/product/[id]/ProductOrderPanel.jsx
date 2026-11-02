@@ -30,9 +30,19 @@ export default function ProductOrderPanel({ product }) {
     qty: Number(qty || 1),
   });
 
+  const trackAddToCart = () => {
+    fetch("/api/track/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "add_to_cart", productId: product.id }),
+      keepalive: true,
+    }).catch(() => {});
+  };
+
   const addToCart = () => {
     if (!purchasable) return;
     cart.addItem(buildItem());
+    trackAddToCart();
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
@@ -40,6 +50,7 @@ export default function ProductOrderPanel({ product }) {
   const buyNow = () => {
     if (!purchasable) return;
     cart.addItem(buildItem());
+    trackAddToCart();
     router.push("/checkout");
   };
 

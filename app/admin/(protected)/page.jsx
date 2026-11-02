@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getProducts } from "@/lib/sheet";
-import { getSummary, getTimeSeries, getProductPerformance, getHourlyDistribution, resolveRange, PERIODS } from "@/lib/analytics";
+import { getSummary, getTimeSeries, getProductPerformance, getHourlyDistribution, getFunnel, resolveRange, PERIODS } from "@/lib/analytics";
 import { getEngagementSummary, getEngagementByPage, isGa4Configured } from "@/lib/ga4";
 import AdminLogoutButton from "../AdminLogoutButton";
 
@@ -38,6 +38,33 @@ function BarChart({ data, labelKey, valueKey, height = 120 }) {
   );
 }
 
+function FunnelChart({ data }) {
+  const base = data[0]?.count || 0;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {data.map((stage, i) => {
+        const prev = i > 0 ? data[i - 1].count : null;
+        const stepRate = prev ? (prev > 0 ? (stage.count / prev) * 100 : 0) : null;
+        const widthPct = base > 0 ? Math.max(4, (stage.count / base) * 100) : 0;
+        return (
+          <div key={stage.key}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 12, marginBottom: 4 }}>
+              <span style={{ fontWeight: 700 }}>{stage.label}</span>
+              <span style={{ color: "var(--muted)" }}>
+                {stage.count.toLocaleString()}명
+                {stepRate !== null ? ` · 이전 단계 대비 ${stepRate.toFixed(1)}%` : ""}
+              </span>
+            </div>
+            <div style={{ background: "#F6F4EE", borderRadius: 6, height: 20, overflow: "hidden" }}>
+              <div style={{ width: `${widthPct}%`, height: "100%", background: "var(--accent)", borderRadius: 6 }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function toDateInputValue(d) {
   return d.toISOString().slice(0, 10);
 }
@@ -55,12 +82,13 @@ export default async function AdminDashboardPage({ searchParams }) {
   const to = searchParams?.to || "";
   const range = resolveRange(period, from, to);
 
-  const [summary, visitSeries, orderSeries, productPerf, hourly, products, engagement, engagementByPage] = await Promise.all([
+  const [summary, visitSeries, orderSeries, productPerf, hourly, funnel, products, engagement, engagementByPage] = await Promise.all([
     getSummary(range),
     getTimeSeries("pageview", period, range),
     getTimeSeries("order_item", period, range),
     getProductPerformance(range),
     getHourlyDistribution(range),
+    getFunnel(range),
     getProducts(),
     getEngagementSummary(range),
     getEngagementByPage(range),
@@ -164,6 +192,14 @@ export default async function AdminDashboardPage({ searchParams }) {
       <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: 16, marginBottom: 28 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 8 }}>주문 건수</div>
         <BarChart data={orderSeries} labelKey="bucket" valueKey="count" />
+      </div>
+
+      <div className="section-head">
+        <h2 className="section-title">전환 퍼널</h2>
+        <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label} · 어느 단계에서 이탈하는지 확인</div>
+      </div>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: 16, marginBottom: 28 }}>
+        <FunnelChart data={funnel} />
       </div>
 
       <div className="section-head">

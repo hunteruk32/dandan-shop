@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 // 더블탭/더블클릭으로 다운로드 요청이 두 번 나가면, 첫 번째 요청에서 이미
 // "발주 처리됨"으로 기록돼서 두 번째 요청이 "발주 대기 중인 주문이 없어요"
 // 에러(JSON)를 그대로 보여주는 혼란스러운 상황이 생길 수 있었다.
 // 일반 <a href> 대신 클릭 즉시 버튼을 비활성화해서 중복 요청 자체를 막는다.
 export default function DownloadOrderExcelButton({ supplier }) {
+  const router = useRouter();
   const [state, setState] = useState("idle"); // idle | loading | error
 
   const download = async () => {
@@ -32,6 +34,8 @@ export default function DownloadOrderExcelButton({ supplier }) {
       a.remove();
       URL.revokeObjectURL(url);
       setState("idle");
+      // 다운로드된 항목은 서버에 발주 처리됨으로 기록됐으니, 목록도 다시 불러와 반영한다.
+      router.refresh();
     } catch (err) {
       setState("error");
       alert(err.message);

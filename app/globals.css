@@ -228,10 +228,35 @@ a { color: inherit; text-decoration: none; }
 }
 
 .hero {
+  position: relative;
   background: linear-gradient(135deg, var(--ink) 0%, #24352C 100%);
+  overflow: hidden;
+}
+
+.hero-media {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, rgba(20, 28, 23, 0.88) 0%, rgba(20, 28, 23, 0.62) 48%, rgba(20, 28, 23, 0.38) 100%);
+  z-index: 1;
 }
 
 .hero-inner {
+  position: relative;
+  z-index: 2;
   max-width: 1280px;
   margin: 0 auto;
   padding: 32px 16px 26px;

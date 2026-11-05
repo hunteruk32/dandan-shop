@@ -4,10 +4,10 @@
  *
  * 매입현황 시트 헤더가 반드시 이 순서여야 합니다 (총 21열):
  * 아이디 | 주문일시 | 발송인 | 발송인 주소 | 발송인 전화번호 | 수취인 | 수취인 전화번호 | 수취인 주소 |
- * 카테고리 | 구매품목 | 수량 | 구매가격 | 배송비 | 합계금액 | 결제상태 | 발주 상태 | 택배사 | 송장번호 | 비고 |
- * 수정이력 | 토스결제키
+ * 카테고리 | 구매품목 | 수량 | 구매가격 | 배송비 | 합계금액 | 결제상태 | 발주 상태 | 토스결제키 | 택배사 |
+ * 송장번호 | 비고 | 수정이력
  *
- * `토스결제키`(21번째 열)는 카드결제 승인 시(handleConfirmCardPayment) 자동으로 채워지며,
+ * `토스결제키`(17번째 열, 발주 상태 바로 다음)는 카드결제 승인 시(handleConfirmCardPayment) 자동으로 채워지며,
  * 고객이 카드결제 주문을 취소할 때(handleStatusRequest) 토스페이먼츠 결제취소 API를 자동으로
  * 호출하는 데 쓰입니다. 계좌이체 주문은 이 열이 비어있고, 지금처럼 수동으로 환불 처리합니다.
  *
@@ -103,10 +103,10 @@ function handleCreate(body) {
       it.totalAmount || "",
       body.paymentMethod === "card" ? "카드결제대기" : "입금대기",
       "입금확인중",
+      "", // 토스결제키 — 카드결제 승인 시 자동으로 채워짐
       "",
       "",
       body.note || "",
-      "",
       "",
     ]);
   });
@@ -150,7 +150,7 @@ function handleUpdate(body) {
   const oldRecipientName = String(firstRow[5] || "").trim();
   const oldRecipientPhone = String(firstRow[6] || "").trim();
   const oldRecipientAddress = String(firstRow[7] || "").trim();
-  const oldNote = String(firstRow[18] || "").trim();
+  const oldNote = String(firstRow[19] || "").trim();
 
   const newRecipientName = String(body.recipientName || "").trim();
   const newRecipientPhone = String(body.recipientPhone || "").trim();
@@ -182,9 +182,9 @@ function handleUpdate(body) {
     sheet.getRange(r, 6).setValue(newRecipientName);
     sheet.getRange(r, 7).setNumberFormat("@").setValue(newRecipientPhone);
     sheet.getRange(r, 8).setValue(newRecipientAddress);
-    sheet.getRange(r, 19).setValue(newNote);
+    sheet.getRange(r, 20).setValue(newNote);
 
-    const historyCell = sheet.getRange(r, 20);
+    const historyCell = sheet.getRange(r, 21);
     const prevHistory = String(historyCell.getValue() || "").trim();
     historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
   });
@@ -267,7 +267,7 @@ function handleStatusRequest(body) {
   const paymentStatus = String(sheet.getRange(targetRowNum, 15).getValue()).trim();
   if (type === "cancel" && paymentStatus === "카드결제완료") {
     const row = data[targetRowNum - 1];
-    const paymentKey = String(row[20] || "").trim();
+    const paymentKey = String(row[16] || "").trim();
     const rowAmount = Number(row[13]) || 0; // 합계금액 — 이 줄(상품) 몫만큼만 부분 취소
 
     const cancelResult = cancelTossPayment(paymentKey, reason || "고객 요청", rowAmount);
@@ -282,7 +282,7 @@ function handleStatusRequest(body) {
 
   sheet.getRange(targetRowNum, 16).setValue(newStatus);
 
-  const historyCell = sheet.getRange(targetRowNum, 20);
+  const historyCell = sheet.getRange(targetRowNum, 21);
   const prevHistory = String(historyCell.getValue() || "").trim();
   historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
 
@@ -360,8 +360,8 @@ function handleConfirmCardPayment(body) {
   rowNumbers.forEach(function (r) {
     sheet.getRange(r, 15).setValue("카드결제완료");
     sheet.getRange(r, 16).setValue("배송준비중");
-    sheet.getRange(r, 21).setValue(paymentKey);
-    const historyCell = sheet.getRange(r, 20);
+    sheet.getRange(r, 17).setValue(paymentKey);
+    const historyCell = sheet.getRange(r, 21);
     const prevHistory = String(historyCell.getValue() || "").trim();
     historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
   });

@@ -57,7 +57,18 @@ async function main() {
   `;
   await sql`CREATE INDEX IF NOT EXISTS supplier_order_log_supplier_idx ON supplier_order_log (supplier, ordered_at)`;
 
-  console.log("done: events, reviews, supplier_order_log tables ready");
+  // 카드결제 주문은 토스 승인이 끝나기 전까지 매입현황시트에 만들지 않는다 — 결제창을
+  // 닫고 나가거나 실패해도 "결제 안 한 주문"이 시트에 남지 않게 하기 위함. 주문 생성에
+  // 필요한 정보를 승인 전까지 여기 잠깐 보관해뒀다가, 승인되면 시트에 쓰고 바로 지운다.
+  await sql`
+    CREATE TABLE IF NOT EXISTS pending_card_orders (
+      token TEXT PRIMARY KEY,
+      payload JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+
+  console.log("done: events, reviews, supplier_order_log, pending_card_orders tables ready");
 }
 
 main().catch((err) => {

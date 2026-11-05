@@ -2,10 +2,13 @@
  * 이 코드를 "매입현황" 구글시트의 확장 프로그램 → Apps Script 에 붙여넣고
  * 웹 앱으로 배포하세요. README.md의 "6단계 — 주문/결제(계좌이체) 연동" 참고.
  *
- * 매입현황 시트 헤더가 반드시 이 순서여야 합니다 (총 21열):
+ * 매입현황 시트 헤더가 반드시 이 순서여야 합니다 (총 22열):
  * 아이디 | 주문일시 | 발송인 | 발송인 주소 | 발송인 전화번호 | 수취인 | 수취인 전화번호 | 수취인 주소 |
  * 카테고리 | 구매품목 | 수량 | 구매가격 | 배송비 | 합계금액 | 결제상태 | 발주 상태 | 토스결제키 | 택배사 |
- * 송장번호 | 비고 | 수정이력
+ * 송장번호 | 비고 | 수정이력 | 배송완료일시
+ *
+ * `배송완료일시`(22번째 열)는 발주 상태를 "배송완료"로 바꾸면 onEdit 트리거가 자동으로
+ * 채웁니다. 직접 입력할 필요 없고, 자동 구매확정(72시간 경과 체크)에만 쓰입니다.
  *
  * `토스결제키`(17번째 열, 발주 상태 바로 다음)는 카드결제 승인 시(handleCreate) 자동으로 채워지며,
  * 고객이 카드결제 주문을 취소할 때(handleStatusRequest) 토스페이먼츠 결제취소 API를 자동으로
@@ -52,8 +55,13 @@
  * 택배사 / 송장번호는 배송 시작할 때 시트에서 직접 입력하는 칸이라 비워둡니다.
  *
  * 발주 상태는 시트에서 직접 수정합니다. 가능한 값(화면에 색으로 구분되어 표시됨):
- *   정상 흐름: 입금확인중 → 배송준비중 → 배송중 → 배송완료
+ *   정상 흐름: 입금확인중 → 배송준비중 → 배송중 → 배송완료 → 구매확정
  *   취소: 취소중 → 취소완료 / 반품: 반품중 → 반품완료 / 교환: 교환중 → 교환완료
+ *
+ * "배송완료" → "구매확정"은 고객이 "내 주문 확인"에서 "구매확정" 버튼을 직접 누르거나
+ * (handleConfirmPurchase), 버튼을 안 눌러도 배송완료 후 72시간이 지나면 자동으로 바뀝니다
+ * (autoConfirmPurchases — 설정 방법은 해당 함수 위 주석 참고, 안 해도 고객이 직접 누르는 건
+ * 정상 동작합니다).
  *
  * "내 주문 확인"에서 고객이 취소/반품을 요청하면(handleStatusRequest) 발주 상태가
  * 자동으로 취소중/반품중으로 바뀌고 수정이력에 "[고객] 취소 요청: 사유"가 남습니다.
@@ -81,6 +89,7 @@ function doPost(e) {
   const body = JSON.parse(e.postData.contents);
   if (body.action === "update") return handleUpdate(body);
   if (body.action === "statusRequest") return handleStatusRequest(body);
+  if (body.action === "confirmPurchase") return handleConfirmPurchase(body);
   return handleCreate(body);
 }
 
@@ -318,6 +327,123 @@ function handleStatusRequest(body) {
   triggerRevalidate("orders");
 
   return jsonOutput({ ok: true, newStatus: newStatus });
+}
+
+/**
+ * 고객이 "내 주문 확인"에서 "구매확정" 버튼을 눌렀을 때 호출됨 (action: "confirmPurchase").
+ * body: { orderId, requesterPhone, itemIndex }
+ * "배송완료" 상태인 상품만 구매확정할 수 있다. 자동 구매확정(배송완료 후 72시간 경과)은
+ * autoConfirmPurchases 참고.
+ */
+function handleConfirmPurchase(body) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const data = sheet.getDataRange().getValues();
+  const orderId = String(body.orderId || "").trim();
+  const requesterPhone = String(body.requesterPhone || "").replace(/[^0-9]/g, "");
+  const itemIndex = Number(body.itemIndex);
+
+  const rowNumbers = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === orderId) rowNumbers.push(i + 1);
+  }
+  if (rowNumbers.length === 0) {
+    return jsonOutput({ ok: false, error: "주문을 찾을 수 없어요." });
+  }
+
+  const firstRow = data[rowNumbers[0] - 1];
+  const senderPhone = String(firstRow[4] || "").replace(/[^0-9]/g, "");
+  if (!requesterPhone || senderPhone !== requesterPhone) {
+    return jsonOutput({ ok: false, error: "본인 주문만 요청할 수 있어요." });
+  }
+
+  const targetRowNum = rowNumbers[itemIndex];
+  if (!targetRowNum) {
+    return jsonOutput({ ok: false, error: "상품을 찾을 수 없어요." });
+  }
+
+  const currentStatus = String(sheet.getRange(targetRowNum, 16).getValue()).trim();
+  if (currentStatus !== "배송완료") {
+    return jsonOutput({ ok: false, error: "배송완료된 상품만 구매확정할 수 있어요." });
+  }
+
+  sheet.getRange(targetRowNum, 16).setValue("구매확정");
+
+  const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  const historyCell = sheet.getRange(targetRowNum, 21);
+  const prevHistory = String(historyCell.getValue() || "").trim();
+  const historyEntry = timestamp + " [고객] 구매확정";
+  historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
+
+  triggerRevalidate("orders");
+
+  return jsonOutput({ ok: true, newStatus: "구매확정" });
+}
+
+/**
+ * 간단 트리거(설치 필요 없음) — 시트에서 발주 상태(16번째 열)를 직접 "배송완료"로 바꾸면
+ * 자동으로 배송완료일시(22번째 열)를 기록한다. autoConfirmPurchases가 이 값으로 72시간
+ * 경과 여부를 계산한다. 다른 열 편집이나 "배송완료" 외의 값으로 바뀔 때는 아무 것도 안 한다.
+ */
+function onEdit(e) {
+  const range = e.range;
+  const sheet = range.getSheet();
+  if (sheet.getIndex() !== 1) return; // 매입현황시트(첫 번째 시트)만 처리
+  if (range.getRow() === 1) return; // 헤더 행은 무시
+
+  const editedCol = 16; // 발주 상태
+  const startCol = range.getColumn();
+  const endCol = startCol + range.getNumColumns() - 1;
+  if (editedCol < startCol || editedCol > endCol) return;
+
+  const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  const numRows = range.getNumRows();
+  for (let i = 0; i < numRows; i++) {
+    const row = range.getRow() + i;
+    if (row === 1) continue;
+    const value = String(sheet.getRange(row, editedCol).getValue()).trim();
+    if (value === "배송완료") {
+      sheet.getRange(row, 22).setValue(timestamp);
+    }
+  }
+}
+
+/**
+ * ── 자동 구매확정 설정 (선택, 안 해도 고객이 직접 "구매확정" 버튼을 눌러서 확정 가능) ──
+ * 발주 상태가 "배송완료"로 바뀐 지 72시간이 지나면 자동으로 "구매확정"으로 바꾼다.
+ * 매일 한 번 실행되게 하려면:
+ *   1) 이 Apps Script 편집기에서 왼쪽 시계 아이콘(트리거) 클릭
+ *   2) 우측 하단 "트리거 추가" 클릭
+ *   3) 실행할 함수: autoConfirmPurchases / 이벤트 소스: 시간 기반 / 시간 기반 트리거 유형: 일 타이머 선택 후 원하는 시간대 지정 → 저장
+ * 등록 안 해도 고객이 "내 주문 확인"에서 직접 "구매확정" 버튼을 누르면 정상 동작한다.
+ */
+function autoConfirmPurchases() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const data = sheet.getDataRange().getValues();
+  const now = new Date();
+  const timestamp = Utilities.formatDate(now, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  let changedAny = false;
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const orderStatus = String(row[15] || "").trim();
+    if (orderStatus !== "배송완료") continue;
+    const deliveredAt = row[21];
+    if (!deliveredAt) continue;
+    const deliveredDate = new Date(deliveredAt);
+    if (isNaN(deliveredDate.getTime())) continue;
+    const hoursPassed = (now - deliveredDate) / (1000 * 60 * 60);
+    if (hoursPassed < 72) continue;
+
+    const rowNum = i + 1;
+    sheet.getRange(rowNum, 16).setValue("구매확정");
+    const historyCell = sheet.getRange(rowNum, 21);
+    const prevHistory = String(historyCell.getValue() || "").trim();
+    const historyEntry = timestamp + " [자동] 배송완료 72시간 경과로 구매확정 처리";
+    historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
+    changedAny = true;
+  }
+
+  if (changedAny) triggerRevalidate("orders");
 }
 
 /**

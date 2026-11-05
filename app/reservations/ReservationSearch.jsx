@@ -44,6 +44,8 @@ export default function ReservationSearch({ orders, myPhone }) {
   const [requestState, setRequestState] = useState("idle"); // idle | saving | error
   const [requestError, setRequestError] = useState("");
 
+  const [confirmingKey, setConfirmingKey] = useState(null); // `${orderId}-${itemIndex}` — 구매확정 요청 중인 항목
+
   useEffect(() => {
     setLocalOrders(orders);
   }, [orders]);
@@ -197,6 +199,38 @@ export default function ReservationSearch({ orders, myPhone }) {
     }
   };
 
+  const submitConfirmPurchase = async (order, itemIndex) => {
+    const key = `${order.id}-${itemIndex}`;
+    setConfirmingKey(key);
+    try {
+      const res = await fetch("/api/order/confirm-purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, itemIndex }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "구매확정에 실패했어요.");
+
+      setLocalOrders((prev) => {
+        const next = [...prev];
+        let seen = -1;
+        for (let i = 0; i < next.length; i++) {
+          if (next[i].id !== order.id) continue;
+          seen += 1;
+          if (seen === itemIndex) {
+            next[i] = { ...next[i], orderStatus: data.newStatus };
+            break;
+          }
+        }
+        return next;
+      });
+    } catch (err) {
+      alert(err.message || "구매확정 중 오류가 발생했어요.");
+    } finally {
+      setConfirmingKey(null);
+    }
+  };
+
   return (
     <div>
       <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>
@@ -336,7 +370,10 @@ export default function ReservationSearch({ orders, myPhone }) {
                         const key = `${order.id}-${i}`;
                         const canCancel = ["입금확인중", "배송준비중"].includes(it.orderStatus);
                         const canReturn = it.orderStatus === "배송완료";
+                        const canConfirmPurchase = it.orderStatus === "배송완료";
                         const isRequesting = requestKey === key;
+                        const isConfirming = confirmingKey === key;
+                        const showReviewLink = ["배송완료", "구매확정"].includes(it.orderStatus) && it.productId;
                         return (
                           <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", background: "var(--line)", borderRadius: 10 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
@@ -348,31 +385,49 @@ export default function ReservationSearch({ orders, myPhone }) {
                               {it.trackingNumber && (
                                 <span style={{ fontSize: 12, color: "var(--muted)" }}>{it.courier} {it.trackingNumber}</span>
                               )}
-                              {it.orderStatus === "배송완료" && it.productId && (
-                                <Link
-                                  href={`/product/${it.productId}?review=1#reviews`}
-                                  className="badge"
-                                  style={{ marginLeft: "auto", background: "var(--gold)", color: "var(--ink)", fontWeight: 800 }}
-                                >
-                                  ✍️ 리뷰 쓰기
-                                </Link>
-                              )}
-                              {(canCancel || canReturn) && !isRequesting && (
-                                <button
-                                  onClick={() => openRequestForm(order, i)}
-                                  className="badge"
-                                  style={{
-                                    marginLeft: it.orderStatus === "배송완료" ? 0 : "auto",
-                                    border: "1px solid var(--spice)",
-                                    background: "#fff",
-                                    color: "var(--spice)",
-                                    cursor: "pointer",
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  {canCancel ? "취소 요청" : "반품 요청"}
-                                </button>
-                              )}
+                              <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                {showReviewLink && (
+                                  <Link
+                                    href={`/product/${it.productId}?review=1#reviews`}
+                                    className="badge"
+                                    style={{ background: "var(--gold)", color: "var(--ink)", fontWeight: 800 }}
+                                  >
+                                    ✍️ 리뷰 쓰기
+                                  </Link>
+                                )}
+                                {canConfirmPurchase && (
+                                  <button
+                                    onClick={() => submitConfirmPurchase(order, i)}
+                                    className="badge"
+                                    disabled={isConfirming}
+                                    style={{
+                                      border: "1px solid var(--accent)",
+                                      background: "var(--accent)",
+                                      color: "#fff",
+                                      cursor: isConfirming ? "default" : "pointer",
+                                      fontWeight: 700,
+                                      opacity: isConfirming ? 0.6 : 1,
+                                    }}
+                                  >
+                                    {isConfirming ? "처리 중…" : "구매확정요청"}
+                                  </button>
+                                )}
+                                {(canCancel || canReturn) && !isRequesting && (
+                                  <button
+                                    onClick={() => openRequestForm(order, i)}
+                                    className="badge"
+                                    style={{
+                                      border: "1px solid var(--spice)",
+                                      background: "#fff",
+                                      color: "var(--spice)",
+                                      cursor: "pointer",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {canCancel ? "취소 요청" : "반품 요청"}
+                                  </button>
+                                )}
+                              </div>
                             </div>
 
                             {isRequesting && (

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "dandan-card-payment-notice-seen";
-// 소식 가치가 떨어지는 한 달 뒤부터는 신규 방문자에게도 자동으로 뜨지 않는다.
-const NOTICE_END = new Date("2026-12-05T00:00:00+09:00").getTime();
+// 딱 1주일만 노출하고, 그 이후로는 신규 방문자에게도 자동으로 뜨지 않는다.
+const NOTICE_END = new Date("2026-11-12T00:00:00+09:00").getTime();
 
 export default function CardPaymentNotice() {
   const [show, setShow] = useState(false);

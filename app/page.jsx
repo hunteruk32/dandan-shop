@@ -4,6 +4,7 @@ import { getProducts, getProductSalesCounts, CATEGORIES } from "@/lib/sheet";
 import ProductBrowser from "./ProductBrowser";
 import ProductAssetsLink from "./ProductAssetsLink";
 import HolidayNotice from "./HolidayNotice";
+import CardPaymentNotice from "./CardPaymentNotice";
 import SiteHeader from "./SiteHeader";
 import OpenChatBanner from "./OpenChatBanner";
 import CategoryQuickGrid from "./CategoryQuickGrid";
@@ -23,6 +24,7 @@ export default async function HomePage() {
   return (
     <div>
       <HolidayNotice />
+      <CardPaymentNotice />
 
       <SiteHeader presentCategories={presentCategories} />
 

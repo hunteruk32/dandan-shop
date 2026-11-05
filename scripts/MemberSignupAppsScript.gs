@@ -7,7 +7,7 @@
  *
  * 비밀번호는 절대 평문으로 오지 않습니다 — Next.js 서버에서 미리 해시(scrypt)한 값만 받습니다.
  * 연간주문횟수/연간주문금액/당월주문량/당월주문금액(D~G열)은 가입 시 0으로 시작하고,
- * 이후 주문이 들어올 때마다 예약기록 시트의 Apps Script(scripts/AppsScript.gs)가
+ * 이후 주문이 들어올 때마다 매입현황 시트의 Apps Script(scripts/AppsScript.gs)가
  * 자동으로 다시 계산해서 채워줍니다 — 여기서 직접 수정할 필요 없습니다.
  */
 function doPost(e) {

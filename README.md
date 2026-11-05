@@ -268,7 +268,19 @@ npm run dev
 
 ## 데이터 갱신 주기
 
-메인 페이지는 60초마다 자동으로 최신 시트 내용을 다시 불러옵니다 (`revalidate: 60`).
-시트에 상품 추가 → 최대 1분 안에 사이트에 반영됩니다. 더 즉시 반영이 필요하면
-Google Apps Script로 Vercel의 On-Demand Revalidation을 호출하는 방법도 있는데,
-필요하시면 다음 단계로 추가해드릴게요.
+기본적으로 홈페이지는 60초마다 자동으로 최신 시트 내용을 다시 불러옵니다 (`revalidate: 60`).
+시트에 상품을 추가하면 최대 1분 안에 사이트에 반영됩니다.
+
+**주문(매입현황시트)은 그보다 빠르게, 즉시 반영됩니다** — 매입현황시트의 Apps Script가
+주문을 쓸 때마다 Vercel의 On-Demand Revalidation을 호출해서 60초를 기다리지 않고
+"내 주문 확인"에 바로 뜨도록 합니다. 이 기능을 쓰려면:
+
+1. Vercel 환경변수에 `REVALIDATE_SECRET` 추가 (아무 랜덤 문자열, `SESSION_SECRET`처럼
+   터미널에서 `node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"`로
+   만들면 됩니다)
+2. 매입현황시트 → 확장 프로그램 → Apps Script 편집기 → 왼쪽 ⚙️ 프로젝트 설정 → 스크립트
+   속성 추가를 두 번:
+   - `REVALIDATE_URL` = `https://내도메인/api/revalidate`
+   - `REVALIDATE_SECRET` = 1번에서 만든 값과 동일하게
+
+설정 안 해도 주문 접수 자체는 정상 동작하고, 기존처럼 최대 60초 뒤에 반영됩니다.

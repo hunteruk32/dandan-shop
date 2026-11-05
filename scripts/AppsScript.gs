@@ -27,6 +27,15 @@
  * 등록 안 해도 주문 접수·카드결제 승인은 정상 동작하며, 취소만 기존처럼(취소중 상태로 바뀌고)
  * 사람이 직접 토스 상점관리자에서 환불 처리하면 됩니다.
  *
+ * ── 즉시 반영 설정 (선택, 안 해도 최대 60초 뒤엔 알아서 반영됨) ──
+ * 기본적으로 홈페이지는 60초마다 시트 내용을 다시 불러오는데, 그래서 주문 직후 "내 주문
+ * 확인"에 내 주문이 바로 안 보일 수 있습니다. triggerRevalidate 참고 — 아래 두 속성을
+ * 등록해두면 주문이 생성·수정될 때마다 딜레이 없이 바로 반영됩니다:
+ *   1) 이 Apps Script 편집기에서 왼쪽 톱니바퀴(프로젝트 설정) 클릭
+ *   2) "스크립트 속성" 항목에서 "스크립트 속성 추가"를 두 번
+ *      — REVALIDATE_URL: https://내도메인/api/revalidate
+ *      — REVALIDATE_SECRET: Vercel의 REVALIDATE_SECRET과 동일한 랜덤 문자열
+ *
  * 비고는 체크아웃 화면에서 고객이 남긴 요청사항입니다. 상품이 여러 개라 줄이 여러 개로 나뉘어도
  * 같은 주문이면 모든 줄에 동일한 값이 채워집니다.
  *
@@ -135,6 +144,7 @@ function handleCreate(body) {
   }
 
   updateMemberStats(body.senderPhone);
+  triggerRevalidate("orders");
 
   return jsonOutput({ ok: true, orderId: orderId });
 }
@@ -205,6 +215,8 @@ function handleUpdate(body) {
     const prevHistory = String(historyCell.getValue() || "").trim();
     historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
   });
+
+  triggerRevalidate("orders");
 
   return jsonOutput({
     ok: true,
@@ -303,6 +315,8 @@ function handleStatusRequest(body) {
   const prevHistory = String(historyCell.getValue() || "").trim();
   historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
 
+  triggerRevalidate("orders");
+
   return jsonOutput({ ok: true, newStatus: newStatus });
 }
 
@@ -337,6 +351,32 @@ function cancelTossPayment(paymentKey, reason, cancelAmount) {
     return { ok: false, error: body.message || ("토스 API 응답 " + code) };
   } catch (err) {
     return { ok: false, error: String(err) };
+  }
+}
+
+/**
+ * 주문이 생성·수정될 때마다 호출해서, 60초 캐시를 기다리지 않고 홈페이지의
+ * "내 주문 확인"이 바로 최신 상태로 보이게 한다(REVALIDATE_URL/REVALIDATE_SECRET
+ * 스크립트 속성 설정 시에만 동작 — 선택 기능, 안 해도 기존처럼 최대 60초 뒤에 반영됨).
+ * 설정하려면:
+ *   1) 이 Apps Script 편집기에서 왼쪽 톱니바퀴(프로젝트 설정) 클릭
+ *   2) "스크립트 속성" 항목에서 "스크립트 속성 추가"를 두 번 — REVALIDATE_URL(예:
+ *      https://dandan-shop.co.kr/api/revalidate), REVALIDATE_SECRET(Vercel의
+ *      REVALIDATE_SECRET과 동일한 값, 아무 랜덤 문자열로 만들면 됨)
+ */
+function triggerRevalidate(tag) {
+  const url = PropertiesService.getScriptProperties().getProperty("REVALIDATE_URL");
+  const secret = PropertiesService.getScriptProperties().getProperty("REVALIDATE_SECRET");
+  if (!url || !secret) return;
+  try {
+    UrlFetchApp.fetch(url, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({ tag: tag, secret: secret }),
+      muteHttpExceptions: true,
+    });
+  } catch (err) {
+    // 실패해도 주문 자체엔 영향 없음 — 기존처럼 최대 60초 뒤 캐시로 반영됨
   }
 }
 

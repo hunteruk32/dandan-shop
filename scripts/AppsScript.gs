@@ -348,6 +348,10 @@ function cancelTossPayment(paymentKey, reason, cancelAmount) {
     const code = res.getResponseCode();
     if (code >= 200 && code < 300) return { ok: true };
     const body = JSON.parse(res.getContentText());
+    // 이미 취소된 결제(ALREADY_CANCELED_PAYMENT)는 토스 쪽엔 취소가 반영됐는데 우리 시트만
+    // 그걸 놓친 경우(예: 이전 시도가 권한 문제로 응답을 못 받았지만 실제로는 처리됐던 경우)다.
+    // 원하는 최종 상태(취소됨)는 이미 맞으므로 실패가 아니라 성공으로 취급한다.
+    if (body.code === "ALREADY_CANCELED_PAYMENT") return { ok: true };
     return { ok: false, error: body.message || ("토스 API 응답 " + code) };
   } catch (err) {
     return { ok: false, error: String(err) };

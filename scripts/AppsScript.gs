@@ -7,9 +7,15 @@
  * 카테고리 | 구매품목 | 수량 | 구매가격 | 배송비 | 합계금액 | 결제상태 | 발주 상태 | 토스결제키 | 택배사 |
  * 송장번호 | 비고 | 수정이력
  *
- * `토스결제키`(17번째 열, 발주 상태 바로 다음)는 카드결제 승인 시(handleConfirmCardPayment) 자동으로 채워지며,
+ * `토스결제키`(17번째 열, 발주 상태 바로 다음)는 카드결제 승인 시(handleCreate) 자동으로 채워지며,
  * 고객이 카드결제 주문을 취소할 때(handleStatusRequest) 토스페이먼츠 결제취소 API를 자동으로
  * 호출하는 데 쓰입니다. 계좌이체 주문은 이 열이 비어있고, 지금처럼 수동으로 환불 처리합니다.
+ *
+ * 카드결제 주문은 Next.js 쪽(app/api/order, app/api/payment/confirm)에서 토스 승인이
+ * 실제로 끝난 뒤에만 이 매입현황시트에 생성 요청을 보냅니다 — 결제창을 닫고 나가거나
+ * 결제가 실패해도 "결제 안 한 주문"이 시트에 안 남도록 하기 위함입니다. 그래서 카드결제
+ * 주문은 "카드결제대기"/"입금확인중" 단계 없이 바로 "카드결제완료"/"배송준비중"으로
+ * 시작합니다.
  *
  * ── 카드결제 자동 취소 설정 (선택, 안 해도 주문 접수·수동 취소는 정상 작동) ──
  * 카드결제 주문을 고객이 "내 주문 확인"에서 취소 요청하면, 자동으로 토스페이먼츠에 결제취소를
@@ -66,7 +72,6 @@ function doPost(e) {
   const body = JSON.parse(e.postData.contents);
   if (body.action === "update") return handleUpdate(body);
   if (body.action === "statusRequest") return handleStatusRequest(body);
-  if (body.action === "confirmCardPayment") return handleConfirmCardPayment(body);
   return handleCreate(body);
 }
 
@@ -85,6 +90,18 @@ function handleCreate(body) {
   const orderId = "ORD-" + dateCode + "-" + phoneLast4 + "-" + String(nextDataRow).padStart(4, "0");
   const orderedAt = Utilities.formatDate(now, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
 
+  // 카드결제는 Next.js 쪽에서 토스 승인이 이미 끝난 뒤에만 이 함수를 호출하므로
+  // (결제창 이탈 시 빈 주문이 안 남게, 주문 생성 자체를 승인 이후로 미뤘다 — 자세한 내용은
+  // app/api/order/route.js, app/api/payment/confirm/route.js 참고), paymentKey가 같이
+  // 오면 바로 "카드결제완료"/"배송준비중"으로 시작하고 토스결제키도 같이 저장한다.
+  const paymentKey = String(body.paymentKey || "").trim();
+  const isConfirmedCard = body.paymentMethod === "card" && paymentKey;
+  const paymentStatus = isConfirmedCard ? "카드결제완료" : "입금대기";
+  const orderStatus = isConfirmedCard ? "배송준비중" : "입금확인중";
+  const historyEntry = isConfirmedCard
+    ? orderedAt + " [토스페이먼츠] 카드결제 승인 완료 (paymentKey: " + paymentKey + ")"
+    : "";
+
   items.forEach(function (it) {
     sheet.appendRow([
       orderId,
@@ -101,13 +118,13 @@ function handleCreate(body) {
       it.price || "",
       it.shippingFee || 0,
       it.totalAmount || "",
-      body.paymentMethod === "card" ? "카드결제대기" : "입금대기",
-      "입금확인중",
-      "", // 토스결제키 — 카드결제 승인 시 자동으로 채워짐
+      paymentStatus,
+      orderStatus,
+      paymentKey,
       "",
       "",
       body.note || "",
-      "",
+      historyEntry,
     ]);
   });
 
@@ -321,52 +338,6 @@ function cancelTossPayment(paymentKey, reason, cancelAmount) {
   } catch (err) {
     return { ok: false, error: String(err) };
   }
-}
-
-/**
- * 토스페이먼츠 카드결제가 실제로 승인된 뒤 호출됨 (action: "confirmCardPayment").
- * body: { orderId, paymentKey, amount }
- *
- * 계좌이체와 달리 입금 확인을 사람이 기다릴 필요가 없어서, 결제상태를 바로
- * "카드결제완료"로, 발주 상태를 바로 "배송준비중"으로 올린다(입금확인중 단계 생략).
- * amount는 이 주문(orderId)에 쌓인 합계금액의 합과 반드시 일치해야 승인 처리한다 —
- * 금액이 다르면 위조된 요청일 수 있으므로 거부한다.
- */
-function handleConfirmCardPayment(body) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  const data = sheet.getDataRange().getValues();
-  const orderId = String(body.orderId || "").trim();
-  const paymentKey = String(body.paymentKey || "").trim();
-  const amount = Number(body.amount);
-
-  const rowNumbers = [];
-  let totalAmount = 0;
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === orderId) {
-      rowNumbers.push(i + 1);
-      totalAmount += Number(data[i][13]) || 0; // 합계금액
-    }
-  }
-  if (rowNumbers.length === 0) {
-    return jsonOutput({ ok: false, error: "주문을 찾을 수 없어요." });
-  }
-  if (totalAmount !== amount) {
-    return jsonOutput({ ok: false, error: "결제 금액이 주문 금액과 일치하지 않아요." });
-  }
-
-  const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
-  const historyEntry = timestamp + " [토스페이먼츠] 카드결제 승인 완료 (paymentKey: " + paymentKey + ")";
-
-  rowNumbers.forEach(function (r) {
-    sheet.getRange(r, 15).setValue("카드결제완료");
-    sheet.getRange(r, 16).setValue("배송준비중");
-    sheet.getRange(r, 17).setValue(paymentKey);
-    const historyCell = sheet.getRange(r, 21);
-    const prevHistory = String(historyCell.getValue() || "").trim();
-    historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
-  });
-
-  return jsonOutput({ ok: true });
 }
 
 function updateMemberStats(phone) {

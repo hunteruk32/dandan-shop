@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
+import { randomUUID } from "crypto";
 import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
 import { resolveShippingFees } from "@/lib/shipping";
+import { buildLineItems } from "@/lib/orderLineItems";
 import { VISITOR_COOKIE } from "@/lib/constants";
 import { sql } from "@/lib/db";
 import { isCardPaymentAllowed } from "@/lib/cardPayment";
@@ -15,8 +17,9 @@ export async function POST(req) {
   }
 
   const body = await req.json();
+  const isCard = body.paymentMethod === "card";
 
-  if (body.paymentMethod === "card" && !isCardPaymentAllowed(session.phone)) {
+  if (isCard && !isCardPaymentAllowed(session.phone)) {
     return Response.json({ ok: false, error: "카드결제는 아직 준비 중이에요. 계좌이체로 주문해주세요." }, { status: 403 });
   }
 
@@ -39,34 +42,9 @@ export async function POST(req) {
     return Response.json({ ok: false, error: `${blocked.productName || "상품"}은(는) 지금 주문할 수 없어요.` }, { status: 409 });
   }
 
-  const url = process.env.ORDER_WEBHOOK_URL;
-  if (!url) {
-    return Response.json(
-      { ok: false, error: "주문 접수 연결이 아직 설정되지 않았어요 (ORDER_WEBHOOK_URL 없음)." },
-      { status: 500 }
-    );
-  }
-
   const resolvedItems = resolveShippingFees(items);
 
-  let totalAmount = 0;
-  const lineItems = resolvedItems.map((it) => {
-    const qty = Number(it.qty) || 0;
-    const price = Number(it.price) || 0;
-    const shippingFee = it.resolvedShippingFee;
-    const itemTotal = price * qty + shippingFee;
-    totalAmount += itemTotal;
-    return {
-      category: String(it.category || "").trim(),
-      item: `${String(it.productName || "").trim()}${it.optionName ? ` (${it.optionName})` : ""} x${qty}`,
-      qty,
-      price,
-      shippingFee,
-      totalAmount: itemTotal,
-    };
-  });
-
-  const payload = {
+  const senderInfo = {
     senderName: String(body.senderName).trim(),
     senderPhone: session.phone,
     senderAddress: String(body.senderAddress).trim(),
@@ -74,9 +52,34 @@ export async function POST(req) {
     recipientPhone: String(body.recipientPhone).trim(),
     recipientAddress: String(body.recipientAddress).trim(),
     note: String(body.note || "").trim(),
-    items: lineItems,
-    paymentMethod: body.paymentMethod === "card" ? "card" : "bank",
   };
+
+  if (isCard) {
+    // 카드결제는 실제 승인이 끝난 뒤에만 매입현황시트에 주문을 만든다 — 지금은 토스 결제창에
+    // 넘길 임시 토큰만 발급해서 주문에 필요한 정보(resolvedItems — productId가 남아있어야
+    // 나중에 분석 이벤트도 기록할 수 있다)를 잠깐 저장해두고, 승인되면
+    // /api/payment/confirm이 이 내용으로 주문을 생성한다. (결제창을 닫고 나가거나
+    // 실패해도 시트에 "결제 안 한 주문"이 안 남게 하기 위함)
+    const { totalAmount } = buildLineItems(resolvedItems);
+    const token = "card_" + randomUUID().replace(/-/g, "");
+    const pendingPayload = { ...senderInfo, resolvedItems };
+    await sql`
+      INSERT INTO pending_card_orders (token, payload)
+      VALUES (${token}, ${JSON.stringify(pendingPayload)}::jsonb)
+    `;
+    return Response.json({ ok: true, totalAmount, orderId: token });
+  }
+
+  const { lineItems, totalAmount } = buildLineItems(resolvedItems);
+  const payload = { ...senderInfo, items: lineItems, paymentMethod: "bank" };
+
+  const url = process.env.ORDER_WEBHOOK_URL;
+  if (!url) {
+    return Response.json(
+      { ok: false, error: "주문 접수 연결이 아직 설정되지 않았어요 (ORDER_WEBHOOK_URL 없음)." },
+      { status: 500 }
+    );
+  }
 
   const res = await fetch(url, {
     method: "POST",

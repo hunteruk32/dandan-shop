@@ -223,6 +223,19 @@ export default function ReservationSearch({ orders, myPhone }) {
           const canEdit = order.paymentStatus === "입금대기";
           const historyLines = order.history ? order.history.split("\n").filter(Boolean) : [];
 
+          // 주문 상품 전체가 취소/반품/교환됐으면, 더 이상 의미 없는 결제상태("카드결제완료" 등)
+          // 대신 그 최종 상태를 맨 위 배지에 보여준다. 일부만 취소된 경우는 헷갈리지 않도록
+          // 기존처럼 결제상태를 그대로 보여준다.
+          const allSameOrderStatus =
+            order.items.length > 0 && order.items.every((it) => it.orderStatus === order.items[0].orderStatus);
+          const finalOrderStatus = order.items[0]?.orderStatus;
+          const showFinalStatus =
+            allSameOrderStatus && ["취소완료", "반품완료", "교환완료"].includes(finalOrderStatus);
+          const topBadgeText = showFinalStatus ? finalOrderStatus : order.paymentStatus;
+          const topBadgeStyle = showFinalStatus
+            ? ORDER_STATUS_STYLE[finalOrderStatus] || ORDER_STATUS_DEFAULT_STYLE
+            : { bg: "#E9F3EC", fg: "var(--accent)" };
+
           return (
             <div key={order.id} className="card" style={{ flexDirection: "column", alignItems: "flex-start", gap: 0, padding: 0, overflow: "hidden" }}>
               <button
@@ -247,8 +260,8 @@ export default function ReservationSearch({ orders, myPhone }) {
                   {order.items.length > 1 ? `상품 ${order.items.length}건` : order.items[0]?.item}
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-                  <span className="badge" style={{ background: "#E9F3EC", color: "var(--accent)" }}>
-                    {order.paymentStatus}
+                  <span className="badge" style={{ background: topBadgeStyle.bg, color: topBadgeStyle.fg }}>
+                    {topBadgeText}
                   </span>
                   <span style={{ fontSize: 13, fontWeight: 700 }}>
                     {order.totalAmount.toLocaleString()}원 · {isExpanded ? "닫기" : "상세보기"}

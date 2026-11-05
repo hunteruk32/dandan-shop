@@ -128,15 +128,17 @@ export default function CheckoutForm() {
 
   const submitCardPayment = async () => {
     if (!requestTossPaymentRef.current) throw new Error("결제창을 아직 불러오는 중이에요. 잠시 후 다시 시도해주세요.");
-    const { orderId: finalOrderId, totalAmount: finalTotal } = await createOrder();
+    const { orderId: finalOrderId } = await createOrder();
     const firstItemName = cart.items[0]?.productName || "상품";
     const orderName = cart.items.length > 1 ? `${firstItemName} 외 ${cart.items.length - 1}건` : firstItemName;
     const origin = window.location.origin;
 
+    // 결제 금액은 TossPaymentWidget이 widgets.setAmount()로 이미 설정해둔 상태라
+    // requestPayment()에는 넘기지 않는다 — 여기서 amount를 같이 보내면 SDK가
+    // "amount는 정의되지 않은 파라미터입니다" 에러로 거부한다.
     await requestTossPaymentRef.current({
       orderId: finalOrderId,
       orderName,
-      amount: { value: finalTotal, currency: "KRW" },
       customerName: form.senderName.trim(),
       customerMobilePhone: String(phone || "").replace(/[^0-9]/g, ""),
       successUrl: `${origin}/checkout/success`,

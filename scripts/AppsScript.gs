@@ -1,10 +1,25 @@
 /**
- * 이 코드를 "예약기록"(매입현황) 구글시트의 확장 프로그램 → Apps Script 에 붙여넣고
+ * 이 코드를 "매입현황" 구글시트의 확장 프로그램 → Apps Script 에 붙여넣고
  * 웹 앱으로 배포하세요. README.md의 "6단계 — 주문/결제(계좌이체) 연동" 참고.
  *
- * 예약기록 시트 헤더가 반드시 이 순서여야 합니다:
+ * 매입현황 시트 헤더가 반드시 이 순서여야 합니다 (총 21열):
  * 아이디 | 주문일시 | 발송인 | 발송인 주소 | 발송인 전화번호 | 수취인 | 수취인 전화번호 | 수취인 주소 |
- * 카테고리 | 구매품목 | 수량 | 구매가격 | 배송비 | 합계금액 | 결제상태 | 발주 상태 | 택배사 | 송장번호 | 비고 | 수정이력
+ * 카테고리 | 구매품목 | 수량 | 구매가격 | 배송비 | 합계금액 | 결제상태 | 발주 상태 | 토스결제키 | 택배사 |
+ * 송장번호 | 비고 | 수정이력
+ *
+ * `토스결제키`(17번째 열, 발주 상태 바로 다음)는 카드결제 승인 시(handleConfirmCardPayment) 자동으로 채워지며,
+ * 고객이 카드결제 주문을 취소할 때(handleStatusRequest) 토스페이먼츠 결제취소 API를 자동으로
+ * 호출하는 데 쓰입니다. 계좌이체 주문은 이 열이 비어있고, 지금처럼 수동으로 환불 처리합니다.
+ *
+ * ── 카드결제 자동 취소 설정 (선택, 안 해도 주문 접수·수동 취소는 정상 작동) ──
+ * 카드결제 주문을 고객이 "내 주문 확인"에서 취소 요청하면, 자동으로 토스페이먼츠에 결제취소를
+ * 요청하고 바로 "취소완료" 처리합니다(사람이 따로 환불할 필요 없음). 이 기능을 쓰려면:
+ *   1) 이 Apps Script 편집기에서 왼쪽 톱니바퀴(프로젝트 설정) 클릭
+ *   2) "스크립트 속성" 항목에서 "스크립트 속성 추가"
+ *   3) 속성: TOSS_SECRET_KEY / 값: 토스 개발자센터 "실제연동(라이브)" 탭의 시크릿 키
+ *      (주문서형·결제창형 연동 키 섹션 — Vercel의 TOSS_SECRET_KEY와 동일한 값)
+ * 등록 안 해도 주문 접수·카드결제 승인은 정상 동작하며, 취소만 기존처럼(취소중 상태로 바뀌고)
+ * 사람이 직접 토스 상점관리자에서 환불 처리하면 됩니다.
  *
  * 비고는 체크아웃 화면에서 고객이 남긴 요청사항입니다. 상품이 여러 개라 줄이 여러 개로 나뉘어도
  * 같은 주문이면 모든 줄에 동일한 값이 채워집니다.
@@ -27,8 +42,11 @@
  *
  * "내 주문 확인"에서 고객이 취소/반품을 요청하면(handleStatusRequest) 발주 상태가
  * 자동으로 취소중/반품중으로 바뀌고 수정이력에 "[고객] 취소 요청: 사유"가 남습니다.
- * 실제 환불·반송 처리는 여기서 자동으로 되지 않으니, 확인 후 계좌이체로 환불해주시고
- * 처리가 끝나면 발주 상태를 취소완료/반품완료로 직접 바꿔주세요.
+ * 계좌이체 주문의 실제 환불·반품 처리는 여기서 자동으로 되지 않으니, 확인 후 계좌이체로
+ * 환불해주시고 처리가 끝나면 발주 상태를 취소완료/반품완료로 직접 바꿔주세요.
+ * 카드결제 주문의 취소는(TOSS_SECRET_KEY 설정 시) 토스페이먼츠 결제취소까지 자동으로 되고
+ * 발주 상태도 바로 취소완료로 끝납니다 — 반품은 상품 회수 확인이 먼저 필요해서 자동화하지
+ * 않았으니 기존처럼 직접 처리해주세요.
  *
  * 주문번호 형식: ORD-yyMMdd-발송인전화번호뒷4자리-일련번호 (예: ORD-260907-8287-0001).
  * 일련번호는 주문 하나가 상품 여러 개면 그만큼 행이 늘어나므로, "주문 개수"가 아니라
@@ -85,6 +103,7 @@ function handleCreate(body) {
       it.totalAmount || "",
       body.paymentMethod === "card" ? "카드결제대기" : "입금대기",
       "입금확인중",
+      "", // 토스결제키 — 카드결제 승인 시 자동으로 채워짐
       "",
       "",
       body.note || "",
@@ -131,7 +150,7 @@ function handleUpdate(body) {
   const oldRecipientName = String(firstRow[5] || "").trim();
   const oldRecipientPhone = String(firstRow[6] || "").trim();
   const oldRecipientAddress = String(firstRow[7] || "").trim();
-  const oldNote = String(firstRow[18] || "").trim();
+  const oldNote = String(firstRow[19] || "").trim();
 
   const newRecipientName = String(body.recipientName || "").trim();
   const newRecipientPhone = String(body.recipientPhone || "").trim();
@@ -163,9 +182,9 @@ function handleUpdate(body) {
     sheet.getRange(r, 6).setValue(newRecipientName);
     sheet.getRange(r, 7).setNumberFormat("@").setValue(newRecipientPhone);
     sheet.getRange(r, 8).setValue(newRecipientAddress);
-    sheet.getRange(r, 19).setValue(newNote);
+    sheet.getRange(r, 20).setValue(newNote);
 
-    const historyCell = sheet.getRange(r, 20);
+    const historyCell = sheet.getRange(r, 21);
     const prevHistory = String(historyCell.getValue() || "").trim();
     historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
   });
@@ -189,9 +208,11 @@ function handleUpdate(body) {
  * 순서 그대로) — Next.js 쪽에서 order.items 배열의 인덱스를 그대로 보내준다.
  *
  * 취소 요청은 발주 상태가 "입금확인중"/"배송준비중"일 때만(아직 배송 시작 전) 가능하고,
- * 반품 요청은 "배송완료"일 때만 가능하다. 성공하면 발주 상태를 "취소중"/"반품중"으로 바꾸고
- * 수정이력에 남긴다 — 실제 환불 처리(입금 취소, 반송 수거 등)는 사장님이 시트에서
- * 직접 진행하고 완료되면 "취소완료"/"반품완료"로 마무리하면 된다.
+ * 반품 요청은 "배송완료"일 때만 가능하다. 카드결제 취소는 토스페이먼츠 결제취소 API를
+ * 바로 호출해서 성공하면 "취소완료"까지 끝낸다(cancelTossPayment 참고). 계좌이체 취소와
+ * 반품은(자동 환불 수단이 없으므로) 기존처럼 "취소중"/"반품중"으로만 바꾸고, 수정이력에
+ * 남긴 뒤 사장님이 직접 환불·반송 수거를 진행하고 완료되면 "취소완료"/"반품완료"로
+ * 마무리하면 된다.
  */
 function handleStatusRequest(body) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
@@ -237,16 +258,69 @@ function handleStatusRequest(body) {
     return jsonOutput({ ok: false, error: "잘못된 요청이에요." });
   }
 
-  sheet.getRange(targetRowNum, 16).setValue(newStatus);
-
   const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
   const label = type === "cancel" ? "취소 요청" : "반품 요청";
-  const historyEntry = timestamp + " [고객] " + label + (reason ? ": " + reason : "");
-  const historyCell = sheet.getRange(targetRowNum, 20);
+  let historyEntry = timestamp + " [고객] " + label + (reason ? ": " + reason : "");
+
+  // 카드결제 취소 요청이면 토스페이먼츠에 바로 결제취소를 요청한다(반품은 상품 회수 확인이
+  // 먼저 필요하므로 자동화하지 않고 기존처럼 사람이 처리한다).
+  const paymentStatus = String(sheet.getRange(targetRowNum, 15).getValue()).trim();
+  if (type === "cancel" && paymentStatus === "카드결제완료") {
+    const row = data[targetRowNum - 1];
+    const paymentKey = String(row[16] || "").trim();
+    const rowAmount = Number(row[13]) || 0; // 합계금액 — 이 줄(상품) 몫만큼만 부분 취소
+
+    const cancelResult = cancelTossPayment(paymentKey, reason || "고객 요청", rowAmount);
+    if (cancelResult.ok) {
+      newStatus = "취소완료";
+      sheet.getRange(targetRowNum, 15).setValue("카드결제취소완료");
+      historyEntry += "\n" + timestamp + " [토스페이먼츠] 카드결제 자동 취소완료 (" + rowAmount + "원)";
+    } else {
+      historyEntry += "\n" + timestamp + " [토스페이먼츠] 자동 취소 실패: " + cancelResult.error + " — 수동으로 확인해주세요.";
+    }
+  }
+
+  sheet.getRange(targetRowNum, 16).setValue(newStatus);
+
+  const historyCell = sheet.getRange(targetRowNum, 21);
   const prevHistory = String(historyCell.getValue() || "").trim();
   historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
 
   return jsonOutput({ ok: true, newStatus: newStatus });
+}
+
+/**
+ * 토스페이먼츠 결제취소 API 호출. paymentKey가 없거나 TOSS_SECRET_KEY 속성이 설정 안 돼
+ * 있으면 호출하지 않고 바로 실패로 반환한다(기존처럼 수동 처리하라는 뜻).
+ * cancelAmount를 생략하면 전액 취소, 지정하면 그 금액만큼만 부분 취소한다.
+ */
+function cancelTossPayment(paymentKey, reason, cancelAmount) {
+  if (!paymentKey) {
+    return { ok: false, error: "이 주문에 저장된 결제키가 없어요" };
+  }
+  const secretKey = PropertiesService.getScriptProperties().getProperty("TOSS_SECRET_KEY");
+  if (!secretKey) {
+    return { ok: false, error: "TOSS_SECRET_KEY 스크립트 속성이 설정 안 돼 있어요" };
+  }
+
+  const payload = { cancelReason: reason || "고객 요청" };
+  if (cancelAmount) payload.cancelAmount = cancelAmount;
+
+  try {
+    const res = UrlFetchApp.fetch("https://api.tosspayments.com/v1/payments/" + paymentKey + "/cancel", {
+      method: "post",
+      contentType: "application/json",
+      headers: { Authorization: "Basic " + Utilities.base64Encode(secretKey + ":") },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    const code = res.getResponseCode();
+    if (code >= 200 && code < 300) return { ok: true };
+    const body = JSON.parse(res.getContentText());
+    return { ok: false, error: body.message || ("토스 API 응답 " + code) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
 }
 
 /**
@@ -286,7 +360,8 @@ function handleConfirmCardPayment(body) {
   rowNumbers.forEach(function (r) {
     sheet.getRange(r, 15).setValue("카드결제완료");
     sheet.getRange(r, 16).setValue("배송준비중");
-    const historyCell = sheet.getRange(r, 20);
+    sheet.getRange(r, 17).setValue(paymentKey);
+    const historyCell = sheet.getRange(r, 21);
     const prevHistory = String(historyCell.getValue() || "").trim();
     historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
   });

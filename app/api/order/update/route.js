@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { revalidateTag } from "next/cache";
 import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
 
 export async function POST(req) {
@@ -45,6 +46,8 @@ export async function POST(req) {
   if (!res.ok || !data.ok) {
     return Response.json({ ok: false, error: data.error || "수정에 실패했어요." }, { status: res.ok ? 400 : 502 });
   }
+
+  revalidateTag("orders");
 
   return Response.json(data);
 }

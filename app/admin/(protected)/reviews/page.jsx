@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getAllReviewsForAdmin } from "@/lib/reviews";
-import { getProducts } from "@/lib/sheet";
+import { getInternalProducts } from "@/lib/sheet";
 import ReviewHideToggle from "./ReviewHideToggle";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +11,8 @@ function formatDate(iso) {
 }
 
 export default async function AdminReviewsPage() {
-  const [reviews, products] = await Promise.all([getAllReviewsForAdmin(), getProducts()]);
-  const productMap = new Map(products.map((p) => [p.id, p]));
+  const [reviews, products] = await Promise.all([getAllReviewsForAdmin(), getInternalProducts()]);
+  const productMap = new Map(products.map((p) => [p.id, { name: p.name }]));
 
   return (
     <div className="wrap" style={{ maxWidth: 900 }}>

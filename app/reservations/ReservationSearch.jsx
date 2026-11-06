@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ORDER_STATUS_STYLE, ORDER_STATUS_DEFAULT_STYLE } from "@/lib/sheet";
+import { ORDER_STATUS_STYLE, ORDER_STATUS_DEFAULT_STYLE } from "@/lib/catalog";
 
 function groupOrders(orders) {
   const map = new Map();

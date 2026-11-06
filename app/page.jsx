@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { getProducts, getProductSalesCounts, CATEGORIES } from "@/lib/sheet";
+import { getProducts, getProductSalesCounts, CATEGORIES, SUPPLIERS } from "@/lib/sheet";
+import { toPublicProduct } from "@/lib/publicProduct";
 import ProductBrowser from "./ProductBrowser";
 import ProductAssetsLink from "./ProductAssetsLink";
 import HolidayNotice from "./HolidayNotice";
@@ -18,7 +19,14 @@ export const revalidate = 60;
 
 export default async function HomePage() {
   const [rawProducts, salesCounts] = await Promise.all([getProducts(), getProductSalesCounts()]);
-  const products = rawProducts.map((p) => ({ ...p, salesCount: salesCounts[p.name] || 0 }));
+  // 목록 RSC payload도 손님용 객체만 담는다. 설명은 카드에서 안 쓰므로 비운다.
+  const products = rawProducts
+    .filter((p) => p.status !== "등록대기")
+    .map((p) => ({
+      ...toPublicProduct(p, SUPPLIERS),
+      description: "",
+      salesCount: salesCounts[p.name] || 0,
+    }));
   const presentCategories = CATEGORIES.filter((c) => products.some((p) => p.category === c));
 
   return (

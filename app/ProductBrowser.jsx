@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CATEGORIES } from "@/lib/sheet";
+import { CATEGORIES } from "@/lib/catalog";
 import ProductGridCard from "./ProductGridCard";
 
 const STATUS_OPTIONS = ["주문가능", "품절", "시즌종료"];

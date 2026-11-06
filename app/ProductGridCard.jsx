@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { STATUS_STYLE } from "@/lib/sheet";
+import { STATUS_STYLE } from "@/lib/catalog";
 import { getDiscount } from "@/lib/pricing";
 
 export default function ProductGridCard({ product, rank }) {

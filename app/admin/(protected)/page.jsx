@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getProducts } from "@/lib/sheet";
+import { getInternalProducts } from "@/lib/sheet";
 import { getSummary, getTimeSeries, getProductPerformance, getHourlyDistribution, getFunnel, resolveRange, PERIODS } from "@/lib/analytics";
 import { getEngagementSummary, getEngagementByPage, isGa4Configured } from "@/lib/ga4";
 import AdminLogoutButton from "../AdminLogoutButton";
@@ -89,12 +89,12 @@ export default async function AdminDashboardPage({ searchParams }) {
     getProductPerformance(range),
     getHourlyDistribution(range),
     getFunnel(range),
-    getProducts(),
+    getInternalProducts(),
     getEngagementSummary(range),
     getEngagementByPage(range),
   ]);
 
-  const productMap = new Map(products.map((p) => [p.id, p]));
+  const productMap = new Map(products.map((p) => [p.id, { name: p.name, category: p.category }]));
   const presetPeriods = Object.entries(PERIODS).filter(([key]) => key !== "custom");
 
   return (

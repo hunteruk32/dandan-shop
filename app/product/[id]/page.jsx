@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getProductById, getProducts, STATUS_STYLE } from "@/lib/sheet";
+import { getProductById, getProducts, STATUS_STYLE, SUPPLIERS } from "@/lib/sheet";
+import { sanitizePublicDescription, toPublicProduct } from "@/lib/publicProduct";
 import CartLink from "../../CartLink";
 import NavIcons from "../../NavIcons";
 import SiteHeader from "../../SiteHeader";
@@ -19,13 +21,19 @@ export async function generateStaticParams() {
   return products.map((p) => ({ id: p.id }));
 }
 
+function plainDescription(description) {
+  return sanitizePublicDescription(description, SUPPLIERS)
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export async function generateMetadata({ params }) {
   const product = await getProductById(params.id);
   if (!product) return {};
 
-  const description = product.description
-    ? product.description.slice(0, 100)
-    : `${product.name} — 단단상회 산지 직송 도소매`;
+  const plain = plainDescription(product.description);
+  const description = plain ? plain.slice(0, 100) : `${product.name} — 단단상회 산지 직송 도소매`;
 
   return {
     title: `${product.name} | 단단상회`,
@@ -39,18 +47,12 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ProductPage({ params }) {
-  const product = await getProductById(params.id);
+  const product = toPublicProduct(await getProductById(params.id), SUPPLIERS);
 
-  if (!product) {
-    return (
-      <div className="wrap">
-        <p style={{ marginTop: 40 }}>상품을 찾을 수 없어요.</p>
-        <Link href="/" className="btn" style={{ display: "inline-block", marginTop: 12 }}>
-          목록으로
-        </Link>
-      </div>
-    );
-  }
+  // 등록대기·없는 상품은 손님 목록에 없다. 직접 URL도 404라 내부 필드가 나가지 않는다.
+  if (!product || product.status === "등록대기") notFound();
+
+  const description = sanitizePublicDescription(product.description, SUPPLIERS);
 
   const s = STATUS_STYLE[product.status] || STATUS_STYLE["주문가능"];
   const discount = getDiscount(product.listPrice, product.price);
@@ -124,10 +126,10 @@ export default async function ProductPage({ params }) {
         </div>
       )}
 
-      {product.description && (
+      {description && (
         <div
           className="desc"
-          dangerouslySetInnerHTML={{ __html: product.description.replace(/\n/g, "<br>") }}
+          dangerouslySetInnerHTML={{ __html: description.replace(/\n/g, "<br>") }}
         />
       )}
 

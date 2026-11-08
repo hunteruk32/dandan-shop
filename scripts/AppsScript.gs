@@ -4,13 +4,13 @@
  *
  * 매입현황 시트 헤더가 반드시 이 순서여야 합니다 (총 22열):
  * 아이디 | 주문일시 | 발송인 | 발송인 주소 | 발송인 전화번호 | 수취인 | 수취인 전화번호 | 수취인 주소 |
- * 카테고리 | 구매품목 | 수량 | 구매가격 | 배송비 | 합계금액 | 결제상태 | 발주 상태 | 토스결제키 | 택배사 |
- * 송장번호 | 비고 | 수정이력 | 배송완료일시
+ * 카테고리 | 구매품목 | 수량 | 구매가격 | 배송비 | 합계금액 | 결제상태 | 발주 상태 | 배송완료일시 | 토스결제키 |
+ * 택배사 | 송장번호 | 비고 | 수정이력
  *
- * `배송완료일시`(22번째 열)는 발주 상태를 "배송완료"로 바꾸면 onEdit 트리거가 자동으로
- * 채웁니다. 직접 입력할 필요 없고, 자동 구매확정(72시간 경과 체크)에만 쓰입니다.
+ * `배송완료일시`(17번째 열, 발주 상태 바로 다음)는 발주 상태를 "배송완료"로 바꾸면 onEdit
+ * 트리거가 자동으로 채웁니다. 직접 입력할 필요 없고, 자동 구매확정(72시간 경과 체크)에만 쓰입니다.
  *
- * `토스결제키`(17번째 열, 발주 상태 바로 다음)는 카드결제 승인 시(handleCreate) 자동으로 채워지며,
+ * `토스결제키`(18번째 열)는 카드결제 승인 시(handleCreate) 자동으로 채워지며,
  * 고객이 카드결제 주문을 취소할 때(handleStatusRequest) 토스페이먼츠 결제취소 API를 자동으로
  * 호출하는 데 쓰입니다. 계좌이체 주문은 이 열이 비어있고, 지금처럼 수동으로 환불 처리합니다.
  *
@@ -138,6 +138,7 @@ function handleCreate(body) {
       it.totalAmount || "",
       paymentStatus,
       orderStatus,
+      "", // 배송완료일시 — onEdit 트리거가 발주 상태를 "배송완료"로 바꾸면 자동으로 채운다
       paymentKey,
       "",
       "",
@@ -186,7 +187,7 @@ function handleUpdate(body) {
   const oldRecipientName = String(firstRow[5] || "").trim();
   const oldRecipientPhone = String(firstRow[6] || "").trim();
   const oldRecipientAddress = String(firstRow[7] || "").trim();
-  const oldNote = String(firstRow[19] || "").trim();
+  const oldNote = String(firstRow[20] || "").trim();
 
   const newRecipientName = String(body.recipientName || "").trim();
   const newRecipientPhone = String(body.recipientPhone || "").trim();
@@ -218,9 +219,9 @@ function handleUpdate(body) {
     sheet.getRange(r, 6).setValue(newRecipientName);
     sheet.getRange(r, 7).setNumberFormat("@").setValue(newRecipientPhone);
     sheet.getRange(r, 8).setValue(newRecipientAddress);
-    sheet.getRange(r, 20).setValue(newNote);
+    sheet.getRange(r, 21).setValue(newNote);
 
-    const historyCell = sheet.getRange(r, 21);
+    const historyCell = sheet.getRange(r, 22);
     const prevHistory = String(historyCell.getValue() || "").trim();
     historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
   });
@@ -305,7 +306,7 @@ function handleStatusRequest(body) {
   const paymentStatus = String(sheet.getRange(targetRowNum, 15).getValue()).trim();
   if (type === "cancel" && paymentStatus === "카드결제완료") {
     const row = data[targetRowNum - 1];
-    const paymentKey = String(row[16] || "").trim();
+    const paymentKey = String(row[17] || "").trim();
     const rowAmount = Number(row[13]) || 0; // 합계금액 — 이 줄(상품) 몫만큼만 부분 취소
 
     const cancelResult = cancelTossPayment(paymentKey, reason || "고객 요청", rowAmount);
@@ -320,7 +321,7 @@ function handleStatusRequest(body) {
 
   sheet.getRange(targetRowNum, 16).setValue(newStatus);
 
-  const historyCell = sheet.getRange(targetRowNum, 21);
+  const historyCell = sheet.getRange(targetRowNum, 22);
   const prevHistory = String(historyCell.getValue() || "").trim();
   historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
 
@@ -369,7 +370,7 @@ function handleConfirmPurchase(body) {
   sheet.getRange(targetRowNum, 16).setValue("구매확정");
 
   const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
-  const historyCell = sheet.getRange(targetRowNum, 21);
+  const historyCell = sheet.getRange(targetRowNum, 22);
   const prevHistory = String(historyCell.getValue() || "").trim();
   const historyEntry = timestamp + " [고객] 구매확정";
   historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
@@ -381,7 +382,7 @@ function handleConfirmPurchase(body) {
 
 /**
  * 간단 트리거(설치 필요 없음) — 시트에서 발주 상태(16번째 열)를 직접 "배송완료"로 바꾸면
- * 자동으로 배송완료일시(22번째 열)를 기록한다. autoConfirmPurchases가 이 값으로 72시간
+ * 자동으로 배송완료일시(17번째 열)를 기록한다. autoConfirmPurchases가 이 값으로 72시간
  * 경과 여부를 계산한다. 다른 열 편집이나 "배송완료" 외의 값으로 바뀔 때는 아무 것도 안 한다.
  */
 function onEdit(e) {
@@ -402,7 +403,7 @@ function onEdit(e) {
     if (row === 1) continue;
     const value = String(sheet.getRange(row, editedCol).getValue()).trim();
     if (value === "배송완료") {
-      sheet.getRange(row, 22).setValue(timestamp);
+      sheet.getRange(row, 17).setValue(timestamp);
     }
   }
 }
@@ -427,7 +428,7 @@ function autoConfirmPurchases() {
     const row = data[i];
     const orderStatus = String(row[15] || "").trim();
     if (orderStatus !== "배송완료") continue;
-    const deliveredAt = row[21];
+    const deliveredAt = row[16];
     if (!deliveredAt) continue;
     const deliveredDate = new Date(deliveredAt);
     if (isNaN(deliveredDate.getTime())) continue;
@@ -436,7 +437,7 @@ function autoConfirmPurchases() {
 
     const rowNum = i + 1;
     sheet.getRange(rowNum, 16).setValue("구매확정");
-    const historyCell = sheet.getRange(rowNum, 21);
+    const historyCell = sheet.getRange(rowNum, 22);
     const prevHistory = String(historyCell.getValue() || "").trim();
     const historyEntry = timestamp + " [자동] 배송완료 72시간 경과로 구매확정 처리";
     historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);

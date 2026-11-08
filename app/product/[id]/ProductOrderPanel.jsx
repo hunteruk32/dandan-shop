@@ -17,6 +17,13 @@ export default function ProductOrderPanel({ product }) {
   const unitPrice = selectedOption ? selectedOption.price : product.price;
   const discount = getDiscount(selectedOption?.listPrice, unitPrice);
 
+  // 다른 상품과 함께 담았을 때 실제로 청구되는 배송비(합배송·묶음배송 등)는 장바구니
+  // 전체를 봐야 정확히 계산되지만(lib/shipping.js), 이 상품 하나만 놓고 보는 화면이라
+  // 그 상품 자체의 합배송 가능 수량(박스당 수량)만 반영해서 미리보기로 보여준다.
+  const combinedQty = Number(product.combinedShippingQty) || 0;
+  const boxes = combinedQty > 0 ? Math.max(1, Math.ceil(Number(qty || 1) / combinedQty)) : 1;
+  const shippingFee = (Number(product.shippingFee) || 0) * boxes;
+
   const buildItem = () => ({
     productId: product.id,
     productName: product.name,
@@ -83,19 +90,19 @@ export default function ProductOrderPanel({ product }) {
 
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--muted)" }}>
         <span>배송비</span>
-        <span>{product.shippingFee ? `${product.shippingFee.toLocaleString()}원` : "무료"}</span>
+        <span>{shippingFee ? `${shippingFee.toLocaleString()}원` : "무료"}</span>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 15, fontWeight: 800 }}>
-        <span>소계</span>
+        <span>합계</span>
         <span style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
           {discount ? (
             <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", textDecoration: "line-through" }}>
-              {(discount.listPrice * Number(qty || 1)).toLocaleString()}원
+              {(discount.listPrice * Number(qty || 1) + shippingFee).toLocaleString()}원
             </span>
           ) : null}
           {discount ? <span style={{ fontSize: 13, fontWeight: 800, color: "var(--spice)" }}>{discount.rate}%</span> : null}
-          <span style={{ color: "var(--spice)" }}>{(unitPrice * Number(qty || 1)).toLocaleString()}원</span>
+          <span style={{ color: "var(--spice)" }}>{(unitPrice * Number(qty || 1) + shippingFee).toLocaleString()}원</span>
         </span>
       </div>
 

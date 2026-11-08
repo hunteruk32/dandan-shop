@@ -47,6 +47,9 @@ export default function ProductGridCard({ product, rank }) {
           </div>
           <span className="badge" style={{ background: s.bg, color: s.fg }}>{product.status}</span>
         </div>
+        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
+          배송비 {product.shippingFee ? `${product.shippingFee.toLocaleString()}원` : "무료"}
+        </div>
       </div>
     </Link>
   );

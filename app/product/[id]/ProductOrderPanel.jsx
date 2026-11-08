@@ -81,6 +81,11 @@ export default function ProductOrderPanel({ product }) {
         onChange={(e) => setQty(e.target.value)}
       />
 
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--muted)" }}>
+        <span>배송비</span>
+        <span>{product.shippingFee ? `${product.shippingFee.toLocaleString()}원` : "무료"}</span>
+      </div>
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 15, fontWeight: 800 }}>
         <span>소계</span>
         <span style={{ display: "flex", alignItems: "baseline", gap: 6 }}>

@@ -7,7 +7,8 @@ import { buildLineItems } from "@/lib/orderLineItems";
 import { VISITOR_COOKIE } from "@/lib/constants";
 import { sql } from "@/lib/db";
 import { isCardPaymentAllowed } from "@/lib/cardPayment";
-import { getProducts } from "@/lib/sheet";
+import { getProducts, getOrderStatusCounts } from "@/lib/sheet";
+import { sendTelegramMessage, formatOrderNotification } from "@/lib/telegram";
 
 const REQUIRED_FIELDS = ["senderName", "senderAddress", "recipientName", "recipientPhone", "recipientAddress"];
 
@@ -98,6 +99,27 @@ export async function POST(req) {
   // Apps Script의 외부 요청 권한(스크립트 속성 설정)에 기대지 않고, 웹훅 성공을 확인한
   // 이 서버에서 바로 캐시를 갱신한다 — "내 주문 확인"이 60초 캐시를 기다리지 않게 하기 위함.
   revalidateTag("orders");
+
+  // 텔레그램 주문 알림 — 설정 안 해놨으면 조용히 건너뛴다.
+  try {
+    const statusCounts = await getOrderStatusCounts();
+    await sendTelegramMessage(
+      formatOrderNotification(
+        {
+          senderName: senderInfo.senderName,
+          senderPhone: senderInfo.senderPhone,
+          lineItems,
+          totalAmount,
+          paymentLabel: "🏦 계좌이체 (입금확인 필요)",
+          recipientName: senderInfo.recipientName,
+          recipientAddress: senderInfo.recipientAddress,
+        },
+        statusCounts
+      )
+    );
+  } catch {
+    // 알림 실패해도 주문 자체엔 영향 없음
+  }
 
   // 분석용 이벤트 기록 — 실패해도 주문 자체는 이미 접수됐으니 응답에 영향 주지 않는다.
   try {

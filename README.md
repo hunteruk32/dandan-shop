@@ -251,6 +251,31 @@ npm run dev
 > Vercel에 배포할 때 Environment Variables에 `MEMBERS_CSV_URL`, `MEMBER_SIGNUP_WEBHOOK_URL`,
 > `SESSION_SECRET` 세 개도 반드시 추가해주세요. `SESSION_SECRET`은 로컬과 다른 값을 새로 만들어도 됩니다.
 
+### 소셜 로그인 (카카오·네이버, 선택)
+
+전화번호+비밀번호 가입 외에 카카오·네이버 계정으로도 로그인할 수 있습니다. 둘 다 설정 안 해도
+전화번호 로그인은 그대로 동작하니 선택사항입니다.
+
+**카카오**
+1. [카카오 디벨로퍼스](https://developers.kakao.com) → 애플리케이션 추가
+2. 앱 설정 → 플랫폼 → Web 플랫폼 등록: `https://dandan-shop.co.kr`
+3. 제품 설정 → 카카오 로그인 → 활성화 ON → Redirect URI에 `https://dandan-shop.co.kr/api/auth/kakao/callback` 추가
+4. 앱 키의 REST API 키를 `KAKAO_REST_API_KEY`에, 카카오 로그인 → 보안의 Client Secret을 `KAKAO_CLIENT_SECRET`에
+
+**네이버**
+1. [네이버 개발자센터](https://developers.naver.com/apps) → 애플리케이션 등록
+2. 사용 API: 네이버 로그인 (제공 정보에 "이름" 체크)
+3. 서비스 URL `https://dandan-shop.co.kr`, Callback URL `https://dandan-shop.co.kr/api/auth/naver/callback` 등록
+4. Client ID/Secret을 `NAVER_CLIENT_ID`/`NAVER_CLIENT_SECRET`에
+
+> ⚠️ **네이버는 앱을 등록해도 바로 아무나 로그인할 수 있는 게 아닙니다.** 새로 만든 앱은 기본적으로
+> "개발 중" 상태라, 네이버 개발자센터에 등록한 테스트 계정으로만 로그인됩니다. ("현재 OOO은 개발
+> 중 상태입니다. 개발 중 상태에서는 등록된 아이디만 로그인할 수 있습니다" 에러가 뜨면 이 상태라는
+> 뜻이에요 — 코드 문제가 아닙니다.) 해결 방법:
+> - **테스트용**: 앱 페이지 → API 설정 → 테스트 계정 관리 → 테스트해볼 네이버 ID 추가
+> - **실제 손님도 쓰게 하려면**: 앱 페이지에서 "검수 신청" → 서비스 URL·이용약관 등 요건을 채워 제출 →
+>   통과하면 "상용" 상태로 바뀌어 모든 네이버 사용자가 로그인할 수 있게 됩니다
+
 ## 분석 대시보드 (/admin)
 
 방문수·상품별 클릭수·구매수·판매율·전환율·시간대별 분포를 일/주/월/분기/반기/연 단위로

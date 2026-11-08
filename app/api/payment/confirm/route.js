@@ -4,6 +4,8 @@ import { confirmTossPayment } from "@/lib/toss";
 import { buildLineItems } from "@/lib/orderLineItems";
 import { VISITOR_COOKIE } from "@/lib/constants";
 import { sql } from "@/lib/db";
+import { getOrderStatusCounts } from "@/lib/sheet";
+import { sendTelegramMessage, formatOrderNotification } from "@/lib/telegram";
 
 export async function POST(req) {
   const body = await req.json().catch(() => ({}));
@@ -70,6 +72,27 @@ export async function POST(req) {
   // Apps Script의 외부 요청 권한에 기대지 않고, 웹훅 성공을 확인한 이 서버에서 바로 캐시를
   // 갱신한다 — "내 주문 확인"이 60초 캐시를 기다리지 않게 하기 위함.
   revalidateTag("orders");
+
+  // 텔레그램 주문 알림 — 설정 안 해놨으면 조용히 건너뛴다.
+  try {
+    const statusCounts = await getOrderStatusCounts();
+    await sendTelegramMessage(
+      formatOrderNotification(
+        {
+          senderName: payload.senderName,
+          senderPhone: payload.senderPhone,
+          lineItems,
+          totalAmount,
+          paymentLabel: "💳 카드결제완료",
+          recipientName: payload.recipientName,
+          recipientAddress: payload.recipientAddress,
+        },
+        statusCounts
+      )
+    );
+  } catch {
+    // 알림 실패해도 주문 자체엔 영향 없음
+  }
 
   // 분석용 이벤트 기록 — 카드결제는 승인이 실제로 확정된 지금 기록한다(이탈·실패 결제는
   // 집계되지 않도록). 실패해도 주문 자체는 이미 접수됐으니 응답에 영향 주지 않는다.

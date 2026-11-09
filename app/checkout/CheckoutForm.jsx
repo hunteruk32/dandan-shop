@@ -133,6 +133,11 @@ export default function CheckoutForm() {
         currency: "KRW",
         transaction_id: finalOrderId || `${form.senderName}-${Date.now()}`,
       });
+      window.gtag("event", "purchase", {
+        transaction_id: finalOrderId || `${form.senderName}-${Date.now()}`,
+        value: finalTotal,
+        currency: "KRW",
+      });
     }
   };
 

@@ -34,6 +34,7 @@ export default function CheckoutForm() {
   const [orderTotal, setOrderTotal] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("bank"); // bank | card
   const [showCardNotice, setShowCardNotice] = useState(false);
+  const [showRewardNotice, setShowRewardNotice] = useState(false);
   const requestTossPaymentRef = useRef(null);
   const cardPaymentEnabled = isCardPaymentAllowed(phone);
 
@@ -49,6 +50,7 @@ export default function CheckoutForm() {
         } else {
           setPhone(data.phone);
           setRewardPoints(data.rewardPoints || 0);
+          setShowRewardNotice(true);
         }
       });
   }, [router]);
@@ -355,6 +357,40 @@ export default function CheckoutForm() {
                 현재 PG사(결제대행사) 계약 심사가 진행 중이라, 지금은 계좌이체로만 주문이 가능해요. 양해 부탁드립니다.
               </p>
               <button className="btn" style={{ width: "100%" }} onClick={() => setShowCardNotice(false)}>
+                확인
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showRewardNotice && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 50,
+              padding: 20,
+            }}
+            onClick={() => setShowRewardNotice(false)}
+          >
+            <div
+              className="card"
+              style={{ flexDirection: "column", alignItems: "flex-start", gap: 10, maxWidth: 320, background: "#fff", padding: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ fontWeight: 800, fontSize: 15 }}>🎁 계좌이체 적립 혜택</div>
+              <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
+                계좌이체로 주문하면 구매확정 시 <b style={{ color: "var(--ink)" }}>결제금액의 1%</b>가 적립돼요.
+                <br />
+                현재 보유 적립금: <b style={{ color: "var(--spice)" }}>{rewardPoints.toLocaleString()}원</b>
+                <br />
+                적립금이 <b style={{ color: "var(--ink)" }}>5,000원 이상</b> 쌓이면 다음 주문부터 자유롭게 사용할 수 있어요.
+              </p>
+              <button className="btn" style={{ width: "100%" }} onClick={() => setShowRewardNotice(false)}>
                 확인
               </button>
             </div>

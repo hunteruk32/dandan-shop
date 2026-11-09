@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
 import { revalidateTag } from "next/cache";
 import { randomUUID } from "crypto";
-import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
+import { verifySessionToken, SESSION_COOKIE, getMembers } from "@/lib/auth";
 import { resolveShippingFees } from "@/lib/shipping";
 import { buildLineItems } from "@/lib/orderLineItems";
+import { resolveUsablePoints, applyRewardDiscount } from "@/lib/rewardPoints";
 import { VISITOR_COOKIE } from "@/lib/constants";
 import { sql } from "@/lib/db";
 import { isCardPaymentAllowed } from "@/lib/cardPayment";
@@ -46,6 +47,12 @@ export async function POST(req) {
 
   const resolvedItems = resolveShippingFees(items);
 
+  // 적립금 사용액 — 클라이언트가 보낸 값은 그대로 믿지 않고, 보유 잔액을 다시 조회해서 확인한다.
+  const members = await getMembers();
+  const availablePoints = members.find((m) => m.phone === session.phone)?.rewardPoints || 0;
+  const built = buildLineItems(resolvedItems);
+  const usedPoints = resolveUsablePoints(availablePoints, body.usedPoints, built.totalAmount);
+
   const senderInfo = {
     senderName: String(body.senderName).trim(),
     senderPhone: session.phone,
@@ -62,9 +69,9 @@ export async function POST(req) {
     // 나중에 분석 이벤트도 기록할 수 있다)를 잠깐 저장해두고, 승인되면
     // /api/payment/confirm이 이 내용으로 주문을 생성한다. (결제창을 닫고 나가거나
     // 실패해도 시트에 "결제 안 한 주문"이 안 남게 하기 위함)
-    const { totalAmount } = buildLineItems(resolvedItems);
+    const totalAmount = built.totalAmount - usedPoints;
     const token = "card_" + randomUUID().replace(/-/g, "");
-    const pendingPayload = { ...senderInfo, resolvedItems };
+    const pendingPayload = { ...senderInfo, resolvedItems, usedPoints };
     await sql`
       INSERT INTO pending_card_orders (token, payload)
       VALUES (${token}, ${JSON.stringify(pendingPayload)}::jsonb)
@@ -72,8 +79,8 @@ export async function POST(req) {
     return Response.json({ ok: true, totalAmount, orderId: token });
   }
 
-  const { lineItems, totalAmount } = buildLineItems(resolvedItems);
-  const payload = { ...senderInfo, items: lineItems, paymentMethod: "bank" };
+  const { lineItems, totalAmount } = applyRewardDiscount(built.lineItems, built.totalAmount, usedPoints);
+  const payload = { ...senderInfo, items: lineItems, paymentMethod: "bank", usedPoints };
 
   const url = process.env.ORDER_WEBHOOK_URL;
   if (!url) {

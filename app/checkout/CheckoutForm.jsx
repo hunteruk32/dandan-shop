@@ -9,11 +9,14 @@ import TrustBadges from "../TrustBadges";
 import AddressSearchField, { combineAddress } from "../AddressSearchField";
 import TossPaymentWidget from "./TossPaymentWidget";
 import { isCardPaymentAllowed } from "@/lib/cardPayment";
+import { REWARD_USE_THRESHOLD } from "@/lib/rewardPoints";
 
 export default function CheckoutForm() {
   const router = useRouter();
   const cart = useCart();
   const [phone, setPhone] = useState(undefined); // undefined = checking, null = logged out
+  const [rewardPoints, setRewardPoints] = useState(0);
+  const [usedPointsInput, setUsedPointsInput] = useState("");
   const [form, setForm] = useState({
     senderName: "",
     senderAddressBase: "",
@@ -34,6 +37,9 @@ export default function CheckoutForm() {
   const requestTossPaymentRef = useRef(null);
   const cardPaymentEnabled = isCardPaymentAllowed(phone);
 
+  const usedPoints = Math.min(Math.max(0, Number(usedPointsInput) || 0), rewardPoints, cart?.total || 0);
+  const payableTotal = (cart?.total || 0) - usedPoints;
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => res.json())
@@ -42,6 +48,7 @@ export default function CheckoutForm() {
           router.push("/login?next=/checkout");
         } else {
           setPhone(data.phone);
+          setRewardPoints(data.rewardPoints || 0);
         }
       });
   }, [router]);
@@ -103,6 +110,7 @@ export default function CheckoutForm() {
         note: form.note.trim(),
         items: cart.items,
         paymentMethod,
+        usedPoints,
       }),
     });
     const data = await res.json();
@@ -273,9 +281,31 @@ export default function CheckoutForm() {
             <span>{cart.shippingTotal.toLocaleString()}원</span>
           </div>
         </div>
+
+        {rewardPoints >= REWARD_USE_THRESHOLD && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 700 }}>적립금 사용 (보유: {rewardPoints.toLocaleString()}원)</label>
+            <input
+              className="input"
+              type="number"
+              min="0"
+              max={Math.min(rewardPoints, cart.total)}
+              value={usedPointsInput}
+              onChange={(e) => setUsedPointsInput(e.target.value)}
+              placeholder="사용할 적립금을 입력하세요"
+            />
+          </div>
+        )}
+
+        {usedPoints > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--accent)" }}>
+            <span>적립금 사용</span>
+            <span>-{usedPoints.toLocaleString()}원</span>
+          </div>
+        )}
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 800, marginTop: 4 }}>
           <span>총 결제금액</span>
-          <span style={{ color: "var(--spice)" }}>{cart.total.toLocaleString()}원</span>
+          <span style={{ color: "var(--spice)" }}>{payableTotal.toLocaleString()}원</span>
         </div>
 
         <div style={{ fontSize: 13, fontWeight: 800, marginTop: 8 }}>결제 방법</div>
@@ -297,6 +327,9 @@ export default function CheckoutForm() {
             카드결제{!cardPaymentEnabled && " (준비중)"}
           </button>
         </div>
+        <p style={{ fontSize: 12, color: "var(--accent)", margin: 0 }}>
+          🎁 계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (다음 주문에 바로 사용 가능)
+        </p>
 
         {showCardNotice && (
           <div
@@ -330,7 +363,7 @@ export default function CheckoutForm() {
 
         {paymentMethod === "card" && (
           <TossPaymentWidget
-            amount={cart.total}
+            amount={payableTotal}
             onReady={(requestPayment) => {
               requestTossPaymentRef.current = requestPayment;
             }}

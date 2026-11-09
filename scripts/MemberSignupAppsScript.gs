@@ -3,12 +3,14 @@
  * 웹 앱으로 배포하세요. README.md의 "7단계 — 로그인 시스템 연동" 참고.
  *
  * 회원 시트 헤더가 반드시 이 순서여야 합니다:
- * 전화번호 | 비밀번호해시 | 가입일시 | 연간주문횟수 | 연간주문금액 | 당월주문량 | 당월주문금액
+ * 전화번호 | 비밀번호해시 | 가입일시 | 연간주문횟수 | 연간주문금액 | 당월주문량 | 당월주문금액 | 적립금
  *
  * 비밀번호는 절대 평문으로 오지 않습니다 — Next.js 서버에서 미리 해시(scrypt)한 값만 받습니다.
  * 연간주문횟수/연간주문금액/당월주문량/당월주문금액(D~G열)은 가입 시 0으로 시작하고,
  * 이후 주문이 들어올 때마다 매입현황 시트의 Apps Script(scripts/AppsScript.gs)가
  * 자동으로 다시 계산해서 채워줍니다 — 여기서 직접 수정할 필요 없습니다.
+ * 적립금(H열)도 가입 시 0으로 시작하고, 계좌이체 주문이 구매확정되면 매입현황 시트의
+ * Apps Script가 자동으로 적립/차감합니다.
  */
 function doPost(e) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
@@ -19,6 +21,7 @@ function doPost(e) {
     body.phone || "",
     body.passwordHash || "",
     createdAt,
+    0,
     0,
     0,
     0,

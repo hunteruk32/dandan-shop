@@ -1,22 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { dismissForToday, isDismissedToday } from "@/lib/dismissToday";
 
-const STORAGE_KEY = "dandan-reward-points-notice-seen";
+const STORAGE_KEY = "dandan-reward-points-notice-dismissed";
 
-// 로그인한 손님에게 홈페이지 접속 시 적립금 제도를 한 번 안내한다(브라우저당 1회만).
+// 로그인한 손님에게 홈페이지 접속 시 적립금 제도를 안내한다("오늘 하루 보지 않기" 체크 전까진 매일 노출).
 export default function RewardPointsNotice() {
   const [show, setShow] = useState(false);
   const [rewardPoints, setRewardPoints] = useState(0);
+  const [dontShowToday, setDontShowToday] = useState(false);
 
   useEffect(() => {
-    let alreadySeen = false;
-    try {
-      alreadySeen = !!localStorage.getItem(STORAGE_KEY);
-    } catch {
-      alreadySeen = false;
-    }
-    if (alreadySeen) return;
+    if (isDismissedToday(STORAGE_KEY)) return;
 
     fetch("/api/auth/me")
       .then((res) => res.json())
@@ -29,11 +25,7 @@ export default function RewardPointsNotice() {
   }, []);
 
   const close = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // 저장 실패해도 그냥 닫히게 둔다
-    }
+    if (dontShowToday) dismissForToday(STORAGE_KEY);
     setShow(false);
   };
 
@@ -78,6 +70,17 @@ export default function RewardPointsNotice() {
             5,000원 이상 적립되면 다음 주문에서 자유롭게 사용할 수 있어요.
           </p>
         </div>
+
+        <label
+          style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--muted)", marginBottom: 12, cursor: "pointer" }}
+        >
+          <input
+            type="checkbox"
+            checked={dontShowToday}
+            onChange={(e) => setDontShowToday(e.target.checked)}
+          />
+          오늘 하루 보지 않기
+        </label>
 
         <button className="btn" style={{ width: "100%" }} onClick={close}>
           확인

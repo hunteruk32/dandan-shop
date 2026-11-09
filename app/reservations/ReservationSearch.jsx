@@ -264,7 +264,7 @@ export default function ReservationSearch({ orders, myPhone }) {
             order.items.length > 0 && order.items.every((it) => it.orderStatus === order.items[0].orderStatus);
           const finalOrderStatus = order.items[0]?.orderStatus;
           const showFinalStatus =
-            allSameOrderStatus && ["취소완료", "반품완료", "교환완료"].includes(finalOrderStatus);
+            allSameOrderStatus && ["구매확정", "취소완료", "반품완료", "교환완료"].includes(finalOrderStatus);
           const topBadgeText = showFinalStatus ? finalOrderStatus : order.paymentStatus;
           const topBadgeStyle = showFinalStatus
             ? ORDER_STATUS_STYLE[finalOrderStatus] || ORDER_STATUS_DEFAULT_STYLE

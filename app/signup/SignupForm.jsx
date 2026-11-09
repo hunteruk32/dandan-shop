@@ -14,6 +14,22 @@ export default function SignupForm() {
   const [password2, setPassword2] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [phoneTaken, setPhoneTaken] = useState(false);
+
+  const checkPhone = async () => {
+    const normalized = phone.replace(/[^0-9]/g, "");
+    if (normalized.length < 9) {
+      setPhoneTaken(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/auth/check-phone?phone=${encodeURIComponent(normalized)}`);
+      const data = await res.json();
+      setPhoneTaken(!!data.exists);
+    } catch {
+      setPhoneTaken(false);
+    }
+  };
 
   const submit = async () => {
     if (!phone.trim() || !password.trim()) return;
@@ -44,7 +60,26 @@ export default function SignupForm() {
     <div className="wrap">
       <PageTitleRow title="회원가입" />
       <label style={{ fontSize: 13, fontWeight: 700 }}>전화번호</label>
-      <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="010-0000-0000" />
+      <input
+        className="input"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        onBlur={checkPhone}
+        placeholder="010-0000-0000"
+      />
+      {phoneTaken && (
+        <p style={{ fontSize: 12, color: "var(--spice)", marginTop: 6 }}>
+          이미 가입된 전화번호예요.{" "}
+          <Link href={`/login?next=${encodeURIComponent(next)}`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+            로그인
+          </Link>
+          {" "}또는{" "}
+          <Link href="/forgot-password" style={{ color: "var(--accent)", fontWeight: 700 }}>
+            비밀번호 찾기
+          </Link>
+          를 이용해주세요.
+        </p>
+      )}
 
       <label style={{ fontSize: 13, fontWeight: 700, marginTop: 10, display: "block" }}>비밀번호</label>
       <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="4자 이상" />

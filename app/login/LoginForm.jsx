@@ -71,6 +71,12 @@ export default function LoginForm() {
         {loading ? "로그인 중…" : "로그인"}
       </button>
 
+      <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8, textAlign: "center" }}>
+        <Link href={`/forgot-password?next=${encodeURIComponent(next)}`} style={{ color: "var(--muted)" }}>
+          비밀번호를 잊으셨나요?
+        </Link>
+      </p>
+
       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
         <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
         <span style={{ fontSize: 12, color: "var(--muted)" }}>또는</span>

@@ -1,29 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { dismissForToday, isDismissedToday } from "@/lib/dismissToday";
 
-const STORAGE_KEY = "dandan-card-payment-notice-seen";
+const STORAGE_KEY = "dandan-card-payment-notice-dismissed";
 // 딱 1주일만 노출하고, 그 이후로는 신규 방문자에게도 자동으로 뜨지 않는다.
 const NOTICE_END = new Date("2026-11-12T00:00:00+09:00").getTime();
 
 export default function CardPaymentNotice() {
   const [show, setShow] = useState(false);
+  const [dontShowToday, setDontShowToday] = useState(false);
 
   useEffect(() => {
     if (Date.now() >= NOTICE_END) return;
-    try {
-      if (!localStorage.getItem(STORAGE_KEY)) setShow(true);
-    } catch {
-      setShow(true);
-    }
+    if (!isDismissedToday(STORAGE_KEY)) setShow(true);
   }, []);
 
   const close = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // 저장 실패해도 그냥 닫히게 둔다
-    }
+    if (dontShowToday) dismissForToday(STORAGE_KEY);
     setShow(false);
   };
 
@@ -68,6 +62,17 @@ export default function CardPaymentNotice() {
             주문 시 결제 방법에서 "카드결제"를 선택해주세요.
           </p>
         </div>
+
+        <label
+          style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--muted)", marginBottom: 12, cursor: "pointer" }}
+        >
+          <input
+            type="checkbox"
+            checked={dontShowToday}
+            onChange={(e) => setDontShowToday(e.target.checked)}
+          />
+          오늘 하루 보지 않기
+        </label>
 
         <button className="btn" style={{ width: "100%" }} onClick={close}>
           확인

@@ -9,7 +9,7 @@ export default function ProductGridCard({ product, rank }) {
     <Link href={`/product/${product.id}`} className="grid-card">
       <div style={{ position: "relative" }}>
         {product.image ? (
-          <img className="grid-card-thumb" src={product.image} alt={product.name} />
+          <img className="grid-card-thumb" src={product.image} alt={product.name} loading="lazy" />
         ) : (
           <div className="grid-card-thumb" />
         )}
@@ -21,14 +21,6 @@ export default function ProductGridCard({ product, rank }) {
             BEST {rank}
           </span>
         ) : null}
-        {discount ? (
-          <span
-            className="badge"
-            style={{ position: "absolute", top: 8, right: 8, background: "var(--spice)", color: "#fff", fontWeight: 800 }}
-          >
-            {discount.rate}%
-          </span>
-        ) : null}
       </div>
       <div className="grid-card-body">
         <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 3 }}>{product.category}</div>
@@ -38,7 +30,7 @@ export default function ProductGridCard({ product, rank }) {
             {discount.listPrice.toLocaleString()}원
           </div>
         ) : null}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="grid-card-price-row">
           <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
             {discount ? <span style={{ fontWeight: 800, fontSize: 13, color: "var(--spice)" }}>{discount.rate}%</span> : null}
             <div className="price" style={{ margin: 0 }}>

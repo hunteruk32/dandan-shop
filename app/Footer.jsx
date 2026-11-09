@@ -9,19 +9,19 @@ export default function Footer() {
           <TrustBadges />
         </div>
         <div>
-          월요일-금요일 10:00-17:00 (Lunch 12:00-13:00) &nbsp; Tel 070-8058-8287 &nbsp; Address: 02233 서울 중랑구 겸재로10길 44 면목 루브루 401호
+          월요일-금요일 10:00-17:00 (점심시간 12:00-13:00) &nbsp; 전화 070-8058-8287 &nbsp; 주소 02233 서울 중랑구 겸재로10길 44 면목 루브루 401호
         </div>
         <div>
-          Company 더블에스글로벌 &nbsp; Owner 성욱진 &nbsp; Business No 466-01-03524 &nbsp; Online-Order No 2024-서울중랑-1185호 &nbsp; Email. contact@dandan-shop.co.kr
+          상호 더블에스글로벌 &nbsp; 대표 성욱진 &nbsp; 사업자등록번호 466-01-03524 &nbsp; 통신판매업신고번호 2024-서울중랑-1185호 &nbsp; 이메일 contact@dandan-shop.co.kr
         </div>
         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 10, marginTop: 8, fontSize: 12, fontWeight: 700 }}>
-          <Link href="/contact" style={{ color: "var(--ink)" }}>Contact</Link>
+          <Link href="/contact" style={{ color: "var(--ink)" }}>문의</Link>
           <span>|</span>
-          <Link href="/guide" style={{ color: "var(--ink)" }}>Guide</Link>
+          <Link href="/guide" style={{ color: "var(--ink)" }}>이용안내</Link>
           <span>|</span>
-          <Link href="/terms" style={{ color: "var(--ink)" }}>Terms of Use</Link>
+          <Link href="/terms" style={{ color: "var(--ink)" }}>이용약관</Link>
           <span>|</span>
-          <Link href="/privacy" style={{ color: "var(--ink)" }}>Privacy Policy</Link>
+          <Link href="/privacy" style={{ color: "var(--ink)" }}>개인정보처리방침</Link>
         </div>
         <div style={{ marginTop: 10 }}>
           <Link href="/admin" aria-label="관리자" title="관리자" style={{ color: "var(--muted)", fontSize: 15 }}>⚙</Link>

@@ -286,8 +286,12 @@ npm run dev
 [솔라피](https://solapi.com)를 통해 카카오 알림톡 또는 일반 SMS로 인증번호를 보냅니다.
 설정 안 해도 사이트 전체는 그대로 동작하고, "인증번호 발송에 실패했어요" 에러만 뜹니다.
 
-1. **DB 준비**: `otp_codes` 테이블이 필요합니다. `node scripts/init-db.mjs`를 (다시) 실행하세요
-   (이미 분석 대시보드용 DB를 설정했다면 같은 명령어로 테이블만 추가됩니다).
+1. **DB 준비**: `otp_codes` 테이블이 필요합니다. 둘 중 편한 방법으로:
+   - **터미널 없이**: `/admin/login`에서 관리자 로그인 후, 브라우저 주소창에
+     `https://내도메인/api/admin/setup-db`를 입력해서 열면 끝입니다 (로그인 안 돼 있으면
+     401 에러가 떠요 — 먼저 로그인하세요).
+   - **터미널로**: `node scripts/init-db.mjs` 실행 (이미 분석 대시보드용 DB를 설정했다면
+     같은 명령어로 테이블만 추가됩니다).
 2. **솔라피 가입 및 발신번호 등록**: [솔라피 콘솔](https://solapi.com) 가입 → 발신번호 등록(본인 인증 필요)
    → 콘솔 내 API Key/Secret 발급 → `SOLAPI_API_KEY`/`SOLAPI_API_SECRET`에, 발신번호를
    `SOLAPI_SENDER_PHONE`에 (하이픈 없이 숫자만)

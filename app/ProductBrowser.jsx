@@ -65,11 +65,13 @@ export default function ProductBrowser({ products }) {
     return sorted;
   };
 
-  // 시즌종료 상품은 구매는 안 되지만 재시즌 때 다시 찾아올 수 있게 완전히 숨기진 않고,
-  // 기본 목록에서는 눈에 덜 띄게 맨 뒤로 보낸다("상태: 시즌종료" 탭에서는 그대로 모아볼 수 있음).
-  const notEnded = filtered.filter((p) => p.status !== "시즌종료");
+  // 품절·시즌종료 상품은 구매가 안 되지만 완전히 숨기진 않고(재입고·재시즌 때 다시 찾아올 수 있음),
+  // 기본 목록에서는 "주문가능" 먼저, 품절, 시즌종료 순으로 뒤로 보낸다
+  // ("상태: 품절"/"상태: 시즌종료" 탭에서는 각각 모아볼 수 있음).
+  const available = filtered.filter((p) => p.status !== "품절" && p.status !== "시즌종료");
+  const soldOut = filtered.filter((p) => p.status === "품절");
   const ended = filtered.filter((p) => p.status === "시즌종료");
-  const shownProducts = [...sortGroup(notEnded), ...sortGroup(ended)];
+  const shownProducts = [...sortGroup(available), ...sortGroup(soldOut), ...sortGroup(ended)];
 
   return (
     <>

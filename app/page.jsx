@@ -18,6 +18,37 @@ import TrustBadges from "./TrustBadges";
 
 export const revalidate = 60;
 
+export const metadata = {
+  title: "단단상회 | 산지직송 수산물·과일·김치 도매가 직거래",
+  description:
+    "전국 협력 산지에서 수산물·과일·김치를 중간 유통 없이 도매가에 직접 보내드립니다. 오전 7시 전 주문 시 당일발송.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "단단상회 | 산지직송 수산물·과일·김치 도매가 직거래",
+    description:
+      "전국 협력 산지에서 수산물·과일·김치를 중간 유통 없이 도매가에 직접 보내드립니다. 오전 7시 전 주문 시 당일발송.",
+    siteName: "단단상회",
+  },
+};
+
+const ORGANIZATION_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "단단상회",
+  legalName: "더블에스글로벌",
+  url: "https://www.dandan-shop.co.kr",
+  email: "contact@dandan-shop.co.kr",
+  telephone: "070-8058-8287",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "겸재로10길 44 면목 루브루 401호",
+    addressLocality: "중랑구",
+    addressRegion: "서울",
+    postalCode: "02233",
+    addressCountry: "KR",
+  },
+};
+
 export default async function HomePage() {
   const [rawProducts, salesCounts] = await Promise.all([getProducts(), getProductSalesCounts()]);
   // 목록 RSC payload도 손님용 객체만 담는다. 설명은 카드에서 안 쓰므로 비운다.
@@ -32,6 +63,10 @@ export default async function HomePage() {
 
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }}
+      />
       <HolidayNotice />
       <CardPaymentNotice />
       <RewardPointsNotice />

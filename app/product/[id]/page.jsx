@@ -28,6 +28,12 @@ function plainDescription(description) {
     .trim();
 }
 
+const AVAILABILITY_BY_STATUS = {
+  주문가능: "https://schema.org/InStock",
+  품절: "https://schema.org/OutOfStock",
+  시즌종료: "https://schema.org/OutOfStock",
+};
+
 export async function generateMetadata({ params }) {
   const product = await getProductById(params.id);
   if (!product) return {};
@@ -58,8 +64,27 @@ export default async function ProductPage({ params }) {
   const discount = getDiscount(product.listPrice, product.price);
   const reviewData = await getReviews(product.id);
 
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: plainDescription(product.description) || undefined,
+    image: product.image || undefined,
+    offers: {
+      "@type": "Offer",
+      url: `https://www.dandan-shop.co.kr/product/${product.id}`,
+      priceCurrency: "KRW",
+      price: product.price,
+      availability: AVAILABILITY_BY_STATUS[product.status] || "https://schema.org/InStock",
+    },
+  };
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <SiteHeader />
       <div className="wrap">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

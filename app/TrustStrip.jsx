@@ -12,7 +12,7 @@ const ITEMS = [
     icon: <><path d="M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5Z" /><path d="m9 12 2 2 4-4" /></>,
   },
   {
-    label: "계좌이체 · 안전결제",
+    label: "카드 · 계좌이체 결제",
     icon: <><rect x="4" y="10" width="16" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>,
   },
 ];

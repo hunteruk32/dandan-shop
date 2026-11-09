@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getProducts, getProductSalesCounts, CATEGORIES, SUPPLIERS } from "@/lib/sheet";
 import { toPublicProduct } from "@/lib/publicProduct";
+import { getRecentPublicReviews } from "@/lib/reviews";
 import ProductBrowser from "./ProductBrowser";
 import ProductAssetsLink from "./ProductAssetsLink";
 import HolidayNotice from "./HolidayNotice";
@@ -15,6 +16,7 @@ import MdPicks from "./MdPicks";
 import TrustStrip from "./TrustStrip";
 import StatsBanner from "./StatsBanner";
 import TrustBadges from "./TrustBadges";
+import RealtimeReviewTicker from "./RealtimeReviewTicker";
 
 export const revalidate = 60;
 
@@ -50,7 +52,11 @@ const ORGANIZATION_JSON_LD = {
 };
 
 export default async function HomePage() {
-  const [rawProducts, salesCounts] = await Promise.all([getProducts(), getProductSalesCounts()]);
+  const [rawProducts, salesCounts, recentReviews] = await Promise.all([
+    getProducts(),
+    getProductSalesCounts(),
+    getRecentPublicReviews(24).catch(() => []),
+  ]);
   // 목록 RSC payload도 손님용 객체만 담는다. 설명은 카드에서 안 쓰므로 비운다.
   const products = rawProducts
     .filter((p) => p.status !== "등록대기")
@@ -113,6 +119,10 @@ export default async function HomePage() {
       <div className="wrap">
         <div style={{ margin: "20px 0" }}>
           <OpenChatBanner />
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <RealtimeReviewTicker reviews={recentReviews} />
         </div>
 
         {presentCategories.length > 0 ? (

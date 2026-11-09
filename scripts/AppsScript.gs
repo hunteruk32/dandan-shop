@@ -164,9 +164,14 @@ function handleCreate(body) {
     sheet.getRange(r, 5).setNumberFormat("@").setValue(body.senderPhone || "");
     sheet.getRange(r, 7).setNumberFormat("@").setValue(body.recipientPhone || "");
   }
+  SpreadsheetApp.flush(); // 회원 시트 연동이 실패해도 주문 자체는 반드시 저장되도록 먼저 커밋한다
 
-  updateMemberStats(body.senderPhone);
-  if (usedPoints > 0) adjustRewardPoints(body.senderPhone, -usedPoints);
+  try {
+    updateMemberStats(body.senderPhone);
+    if (usedPoints > 0) adjustRewardPoints(body.senderPhone, -usedPoints);
+  } catch (err) {
+    // 회원 통계·적립금 차감 실패해도 주문 접수 자체는 이미 끝났으니 응답에 영향 주지 않는다
+  }
   triggerRevalidate("orders");
 
   return jsonOutput({ ok: true, orderId: orderId });
@@ -401,11 +406,17 @@ function handleConfirmPurchase(body) {
   }
 
   sheet.getRange(targetRowNum, 16).setValue("구매확정");
-  const reward = awardBankTransferReward(sheet, targetRowNum);
+  SpreadsheetApp.flush(); // 적립금 계산이 실패해도 구매확정 처리 자체는 반드시 저장되도록 먼저 커밋한다
 
   const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
   let historyEntry = timestamp + " [고객] 구매확정";
-  if (reward > 0) historyEntry += "\n" + timestamp + " [적립금] " + reward + "원 적립 (계좌이체 구매확정 1%)";
+  let reward = 0;
+  try {
+    reward = awardBankTransferReward(sheet, targetRowNum);
+    if (reward > 0) historyEntry += "\n" + timestamp + " [적립금] " + reward + "원 적립 (계좌이체 구매확정 1%)";
+  } catch (err) {
+    historyEntry += "\n" + timestamp + " [적립금] 적립 실패: " + err + " — 수동으로 확인해주세요.";
+  }
 
   const historyCell = sheet.getRange(targetRowNum, 22);
   const prevHistory = String(historyCell.getValue() || "").trim();
@@ -473,10 +484,15 @@ function autoConfirmPurchases() {
 
     const rowNum = i + 1;
     sheet.getRange(rowNum, 16).setValue("구매확정");
-    const reward = awardBankTransferReward(sheet, rowNum);
+    SpreadsheetApp.flush(); // 적립금 계산이 실패해도 이 행의 구매확정 처리는 반드시 저장되도록 먼저 커밋한다
 
     let historyEntry = timestamp + " [자동] 배송완료 72시간 경과로 구매확정 처리";
-    if (reward > 0) historyEntry += "\n" + timestamp + " [적립금] " + reward + "원 적립 (계좌이체 구매확정 1%)";
+    try {
+      const reward = awardBankTransferReward(sheet, rowNum);
+      if (reward > 0) historyEntry += "\n" + timestamp + " [적립금] " + reward + "원 적립 (계좌이체 구매확정 1%)";
+    } catch (err) {
+      historyEntry += "\n" + timestamp + " [적립금] 적립 실패: " + err + " — 수동으로 확인해주세요.";
+    }
 
     const historyCell = sheet.getRange(rowNum, 22);
     const prevHistory = String(historyCell.getValue() || "").trim();

@@ -343,12 +343,19 @@ function handleStatusRequest(body) {
   return jsonOutput({ ok: true, newStatus: newStatus });
 }
 
+// 적립금 제도 시행일 — 이보다 전에 주문일시가 찍힌 주문은(그 당시엔 적립 제도가 없었으므로)
+// 나중에 구매확정되더라도 소급 적립하지 않는다.
+const REWARD_PROGRAM_START = new Date("2026-11-09T00:00:00+09:00");
+
 // 계좌이체 주문이 구매확정되면 그 줄(품목) 금액의 1%를 적립해준다. 카드결제 주문
-// (토스결제키가 있는 줄)은 적립 대상이 아니다. 적립된 금액(0이면 적립 없음)을 반환한다.
+// (토스결제키가 있는 줄)이거나, 적립금 제도 시행일 전에 들어온 주문은 적립 대상이 아니다.
+// 적립된 금액(0이면 적립 없음)을 반환한다.
 function awardBankTransferReward(sheet, rowNum) {
   const row = sheet.getRange(rowNum, 1, 1, 22).getValues()[0];
   const paymentKey = String(row[17] || "").trim(); // 토스결제키
   if (paymentKey) return 0;
+  const orderedAt = new Date(row[1]); // 주문일시
+  if (isNaN(orderedAt.getTime()) || orderedAt < REWARD_PROGRAM_START) return 0;
   const amount = Number(row[13]) || 0; // 합계금액
   const reward = Math.floor(amount * 0.01);
   if (reward <= 0) return 0;

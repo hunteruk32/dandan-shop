@@ -68,7 +68,22 @@ async function main() {
     )
   `;
 
-  console.log("done: events, reviews, supplier_order_log, pending_card_orders tables ready");
+  // 비밀번호 찾기용 전화번호 인증(SMS/알림톡) 코드. 전화번호+목적별로 최신 1건만 유효하게 쓴다.
+  await sql`
+    CREATE TABLE IF NOT EXISTS otp_codes (
+      id BIGSERIAL PRIMARY KEY,
+      phone TEXT NOT NULL,
+      purpose TEXT NOT NULL,
+      code TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used BOOLEAN NOT NULL DEFAULT false,
+      attempts SMALLINT NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS otp_codes_phone_purpose_idx ON otp_codes (phone, purpose, created_at)`;
+
+  console.log("done: events, reviews, supplier_order_log, pending_card_orders, otp_codes tables ready");
 }
 
 main().catch((err) => {

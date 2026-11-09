@@ -330,7 +330,10 @@ export default function CheckoutForm() {
           </button>
         </div>
         <p style={{ fontSize: 12, color: "var(--accent)", margin: 0 }}>
-          🎁 계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (다음 주문에 바로 사용 가능)
+          🎁 계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (5000원 이상 적립시 다음주문에서 사용가능)
+        </p>
+        <p style={{ fontSize: 12, color: "var(--muted)", margin: 0 }}>
+          💡 계좌이체 시 비고에 남겨주시면 사업자지출증빙 또는 현금영수증 발급해드려요
         </p>
 
         {showCardNotice && (

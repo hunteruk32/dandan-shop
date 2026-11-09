@@ -1,8 +1,9 @@
 import ProductGridCard from "./ProductGridCard";
 
 export default function BestProducts({ products }) {
-  const sold = products.filter((p) => p.salesCount > 0);
-  const best = (sold.length >= 4 ? sold : products)
+  const available = products.filter((p) => p.status !== "품절");
+  const sold = available.filter((p) => p.salesCount > 0);
+  const best = (sold.length >= 4 ? sold : available)
     .slice()
     .sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))
     .slice(0, 4);

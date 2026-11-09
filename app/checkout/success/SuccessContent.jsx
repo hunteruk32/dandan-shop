@@ -38,6 +38,11 @@ export default function SuccessContent() {
             currency: "KRW",
             transaction_id: orderId,
           });
+          window.gtag("event", "purchase", {
+            transaction_id: orderId,
+            value: Number(amount),
+            currency: "KRW",
+          });
         }
         setState("done");
       })

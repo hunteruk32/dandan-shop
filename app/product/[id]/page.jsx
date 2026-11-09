@@ -167,7 +167,7 @@ export default async function ProductPage({ params }) {
       )}
 
       <Suspense fallback={null}>
-        <ReviewSection productId={product.id} initial={reviewData} />
+        <ReviewSection key={product.id} productId={product.id} initial={reviewData} />
       </Suspense>
 
       <div

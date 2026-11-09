@@ -75,7 +75,7 @@
  * 일련번호는 주문 하나가 상품 여러 개면 그만큼 행이 늘어나므로, "주문 개수"가 아니라
  * "지금까지 쌓인 행 수" 기준으로 매겨집니다 (번호가 듬성듬성 늘어날 수 있음).
  *
- * ── 회원 시트 연동 (연간/당월 주문 통계 자동 갱신) ──
+ * ── 회원 시트 연동 (연간/당월 주문 통계 자동 갱신, 적립금) ──
  * 주문이 들어올 때마다 "회원" 시트에서 발송인 전화번호가 일치하는 행을 찾아
  * 연간주문횟수 / 연간주문금액 / 당월주문량 / 당월주문금액(D~G열)을 이 시트의 데이터로
  * 다시 계산해서 덮어씁니다. 이 기능을 쓰려면 딱 한 번, 아래처럼 회원 시트의 ID를
@@ -83,7 +83,13 @@
  *   1) 이 Apps Script 편집기에서 왼쪽 톱니바퀴(프로젝트 설정) 클릭
  *   2) "스크립트 속성" 항목에서 "스크립트 속성 추가"
  *   3) 속성: MEMBER_SHEET_ID / 값: 회원 구글시트 URL의 .../d/와 /edit 사이 긴 문자열
- * 등록 안 해도 주문 접수 자체는 정상 동작하며, 회원 통계 갱신만 건너뜁니다.
+ * 등록 안 해도 주문 접수 자체는 정상 동작하며, 회원 통계 갱신·적립금 적립/차감만 건너뜁니다.
+ *
+ * 적립금(H열, 8번째 열)도 같은 설정으로 동작합니다. 계좌이체 주문 품목이 "구매확정"되면
+ * (handleConfirmPurchase/autoConfirmPurchases 참고) 그 품목 금액의 1%가 자동으로
+ * 적립되고, 체크아웃에서 적립금을 쓰면(usedPoints) handleCreate에서 그만큼 차감됩니다.
+ * 카드결제 주문은 적립 대상이 아닙니다(계좌이체 유도용). 회원 시트에 H열 "적립금"을
+ * 미리 추가해주세요 — 숫자만 들어가며, 비어있으면 0으로 취급합니다.
  */
 function doPost(e) {
   const body = JSON.parse(e.postData.contents);
@@ -116,9 +122,15 @@ function handleCreate(body) {
   const isConfirmedCard = body.paymentMethod === "card" && paymentKey;
   const paymentStatus = isConfirmedCard ? "카드결제완료" : "입금대기";
   const orderStatus = isConfirmedCard ? "배송준비중" : "입금확인중";
-  const historyEntry = isConfirmedCard
-    ? orderedAt + " [토스페이먼츠] 카드결제 승인 완료 (paymentKey: " + paymentKey + ")"
-    : "";
+  const usedPoints = Number(body.usedPoints) || 0;
+  const historyLines = [];
+  if (isConfirmedCard) {
+    historyLines.push(orderedAt + " [토스페이먼츠] 카드결제 승인 완료 (paymentKey: " + paymentKey + ")");
+  }
+  if (usedPoints > 0) {
+    historyLines.push(orderedAt + " [적립금] " + usedPoints + "원 사용");
+  }
+  const historyEntry = historyLines.join("\n");
 
   items.forEach(function (it) {
     sheet.appendRow([
@@ -154,6 +166,7 @@ function handleCreate(body) {
   }
 
   updateMemberStats(body.senderPhone);
+  if (usedPoints > 0) adjustRewardPoints(body.senderPhone, -usedPoints);
   triggerRevalidate("orders");
 
   return jsonOutput({ ok: true, orderId: orderId });
@@ -330,6 +343,19 @@ function handleStatusRequest(body) {
   return jsonOutput({ ok: true, newStatus: newStatus });
 }
 
+// 계좌이체 주문이 구매확정되면 그 줄(품목) 금액의 1%를 적립해준다. 카드결제 주문
+// (토스결제키가 있는 줄)은 적립 대상이 아니다. 적립된 금액(0이면 적립 없음)을 반환한다.
+function awardBankTransferReward(sheet, rowNum) {
+  const row = sheet.getRange(rowNum, 1, 1, 22).getValues()[0];
+  const paymentKey = String(row[17] || "").trim(); // 토스결제키
+  if (paymentKey) return 0;
+  const amount = Number(row[13]) || 0; // 합계금액
+  const reward = Math.floor(amount * 0.01);
+  if (reward <= 0) return 0;
+  adjustRewardPoints(row[4], reward); // 발송인 전화번호
+  return reward;
+}
+
 /**
  * 고객이 "내 주문 확인"에서 "구매확정" 버튼을 눌렀을 때 호출됨 (action: "confirmPurchase").
  * body: { orderId, requesterPhone, itemIndex }
@@ -368,11 +394,14 @@ function handleConfirmPurchase(body) {
   }
 
   sheet.getRange(targetRowNum, 16).setValue("구매확정");
+  const reward = awardBankTransferReward(sheet, targetRowNum);
 
   const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  let historyEntry = timestamp + " [고객] 구매확정";
+  if (reward > 0) historyEntry += "\n" + timestamp + " [적립금] " + reward + "원 적립 (계좌이체 구매확정 1%)";
+
   const historyCell = sheet.getRange(targetRowNum, 22);
   const prevHistory = String(historyCell.getValue() || "").trim();
-  const historyEntry = timestamp + " [고객] 구매확정";
   historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
 
   triggerRevalidate("orders");
@@ -437,9 +466,13 @@ function autoConfirmPurchases() {
 
     const rowNum = i + 1;
     sheet.getRange(rowNum, 16).setValue("구매확정");
+    const reward = awardBankTransferReward(sheet, rowNum);
+
+    let historyEntry = timestamp + " [자동] 배송완료 72시간 경과로 구매확정 처리";
+    if (reward > 0) historyEntry += "\n" + timestamp + " [적립금] " + reward + "원 적립 (계좌이체 구매확정 1%)";
+
     const historyCell = sheet.getRange(rowNum, 22);
     const prevHistory = String(historyCell.getValue() || "").trim();
-    const historyEntry = timestamp + " [자동] 배송완료 72시간 경과로 구매확정 처리";
     historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
     changedAny = true;
   }
@@ -511,21 +544,40 @@ function triggerRevalidate(tag) {
   }
 }
 
+// 회원 시트에서 전화번호로 행을 찾는다. 못 찾으면 -1.
+function findMemberRow(memberSheet, normalizedPhone) {
+  const memberData = memberSheet.getDataRange().getValues();
+  for (let i = 1; i < memberData.length; i++) {
+    if (String(memberData[i][0]).replace(/[^0-9]/g, "") === normalizedPhone) {
+      return i + 1; // 시트 행 번호(1-based)
+    }
+  }
+  return -1;
+}
+
+// 회원의 적립금(8번째 열)을 delta만큼 더한다(차감은 음수로). 0 밑으로는 안 내려간다.
+// 비회원 전화번호거나 MEMBER_SHEET_ID 설정 안 돼 있으면 조용히 건너뛴다.
+function adjustRewardPoints(phone, delta) {
+  const memberSheetId = PropertiesService.getScriptProperties().getProperty("MEMBER_SHEET_ID");
+  const normalizedPhone = String(phone || "").replace(/[^0-9]/g, "");
+  if (!memberSheetId || !normalizedPhone || !delta) return;
+
+  const memberSheet = SpreadsheetApp.openById(memberSheetId).getSheets()[0];
+  const memberRow = findMemberRow(memberSheet, normalizedPhone);
+  if (memberRow === -1) return;
+
+  const cell = memberSheet.getRange(memberRow, 8);
+  const current = Number(cell.getValue()) || 0;
+  cell.setValue(Math.max(0, current + delta));
+}
+
 function updateMemberStats(phone) {
   const memberSheetId = PropertiesService.getScriptProperties().getProperty("MEMBER_SHEET_ID");
   const normalizedPhone = String(phone || "").replace(/[^0-9]/g, "");
   if (!memberSheetId || !normalizedPhone) return;
 
   const memberSheet = SpreadsheetApp.openById(memberSheetId).getSheets()[0];
-  const memberData = memberSheet.getDataRange().getValues();
-
-  let memberRow = -1;
-  for (let i = 1; i < memberData.length; i++) {
-    if (String(memberData[i][0]).replace(/[^0-9]/g, "") === normalizedPhone) {
-      memberRow = i + 1; // 시트 행 번호(1-based)
-      break;
-    }
-  }
+  const memberRow = findMemberRow(memberSheet, normalizedPhone);
   if (memberRow === -1) return; // 회원이 아니면 통계 갱신 안 함
 
   const orderSheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];

@@ -13,6 +13,7 @@ import ProductTestimonials from "./ProductTestimonials";
 import ReviewSection from "./ReviewSection";
 import { getDiscount } from "@/lib/pricing";
 import { getReviews } from "@/lib/reviews";
+import { ISLAND_SHIPPING_NOTICE, NEUTRAL_SHIPPING_CUTOFF, resolveShippingCutoff } from "@/lib/shippingNotice";
 
 export const revalidate = 60;
 
@@ -59,6 +60,10 @@ export default async function ProductPage({ params }) {
   if (!product || product.status === "등록대기") notFound();
 
   const description = sanitizePublicDescription(product.description, SUPPLIERS);
+  const shippingCutoff = resolveShippingCutoff({
+    shippingCutoff: product.shippingCutoff,
+    description,
+  });
 
   const s = STATUS_STYLE[product.status] || STATUS_STYLE["주문가능"];
   const discount = getDiscount(product.listPrice, product.price);
@@ -176,7 +181,12 @@ export default async function ProductPage({ params }) {
       >
         <div style={{ fontWeight: 800, marginBottom: 4 }}>배송 안내</div>
         <div style={{ color: "var(--muted)" }}>
-          <b style={{ color: "var(--ink)" }}>오전 7시 이전 결제(입금 확인)</b> 시 당일 발송, 익일 도착해요. 7시 이후 주문은 다음날 발송됩니다. 도서·산간 지역은 1일 이상 추가로 소요되거나 추가 배송비가 발생할 수 있어요. 안내된 발송 예정일보다 3일 이상 지연되면 취소·전액 환불이 가능해요.
+          {(shippingCutoff || NEUTRAL_SHIPPING_CUTOFF).split("\n").filter(Boolean).map((line) => (
+            <div key={line}>{line}</div>
+          ))}
+          <div style={{ marginTop: 4 }}>
+            {ISLAND_SHIPPING_NOTICE} 안내된 발송 예정일보다 3일 이상 지연되면 취소·전액 환불이 가능해요.
+          </div>
         </div>
         <div style={{ fontWeight: 800, margin: "10px 0 4px" }}>교환·환불 안내</div>
         <div style={{ color: "var(--muted)" }}>

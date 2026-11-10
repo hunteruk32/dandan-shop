@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCart } from "../CartProvider";
 import PageTitleRow from "../PageTitleRow";
 import TrustBadges from "../TrustBadges";
@@ -12,12 +11,12 @@ import { isCardPaymentAllowed } from "@/lib/cardPayment";
 import { REWARD_USE_THRESHOLD } from "@/lib/rewardPoints";
 
 export default function CheckoutForm() {
-  const router = useRouter();
   const cart = useCart();
   const [phone, setPhone] = useState(undefined); // undefined = checking, null = logged out
   const [rewardPoints, setRewardPoints] = useState(0);
   const [usedPointsInput, setUsedPointsInput] = useState("");
   const [form, setForm] = useState({
+    senderPhone: "",
     senderName: "",
     senderAddressBase: "",
     senderAddressDetail: "",
@@ -36,7 +35,7 @@ export default function CheckoutForm() {
   const [showCardNotice, setShowCardNotice] = useState(false);
   const [showRewardNotice, setShowRewardNotice] = useState(false);
   const requestTossPaymentRef = useRef(null);
-  const cardPaymentEnabled = isCardPaymentAllowed(phone);
+  const cardPaymentEnabled = isCardPaymentAllowed(phone || form.senderPhone);
 
   const usedPoints = Math.min(Math.max(0, Number(usedPointsInput) || 0), rewardPoints, cart?.total || 0);
   const payableTotal = (cart?.total || 0) - usedPoints;
@@ -46,14 +45,18 @@ export default function CheckoutForm() {
       .then((res) => res.json())
       .then((data) => {
         if (!data.phone) {
-          router.push("/login?next=/checkout");
+          // 비회원도 주문은 가능하다 — 로그인은 적립금 등 회원 혜택을 쓰고 싶을 때만 필요하다.
+          setPhone(null);
         } else {
           setPhone(data.phone);
           setRewardPoints(data.rewardPoints || 0);
           setShowRewardNotice(true);
         }
       });
-  }, [router]);
+  }, []);
+
+  // 로그인했으면 세션 전화번호, 비회원이면 직접 입력한 전화번호.
+  const contactPhone = phone || form.senderPhone.trim();
 
   // 이전에 주문한 적 있으면 발송인 성함·주소를 자동으로 채워준다 (수취인은 매번 다를 수 있어 제외).
   useEffect(() => {
@@ -83,7 +86,7 @@ export default function CheckoutForm() {
       ...f,
       sameAsSender: checked,
       recipientName: checked ? f.senderName : "",
-      recipientPhone: checked ? phone || "" : "",
+      recipientPhone: checked ? contactPhone || "" : "",
       recipientAddressBase: checked ? f.senderAddressBase : "",
       recipientAddressDetail: checked ? f.senderAddressDetail : "",
     }));
@@ -93,6 +96,7 @@ export default function CheckoutForm() {
   const recipientAddress = combineAddress(form.recipientAddressBase, form.recipientAddressDetail);
 
   const requiredFilled =
+    (phone || form.senderPhone.trim().length >= 9) &&
     form.senderName.trim() &&
     senderAddress &&
     form.recipientName.trim() &&
@@ -104,6 +108,7 @@ export default function CheckoutForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        senderPhone: phone ? undefined : form.senderPhone.trim(),
         senderName: form.senderName.trim(),
         senderAddress,
         recipientName: form.recipientName.trim(),
@@ -155,7 +160,7 @@ export default function CheckoutForm() {
       orderId: finalOrderId,
       orderName,
       customerName: form.senderName.trim(),
-      customerMobilePhone: String(phone || "").replace(/[^0-9]/g, ""),
+      customerMobilePhone: String(contactPhone || "").replace(/[^0-9]/g, ""),
       successUrl: `${origin}/checkout/success`,
       failUrl: `${origin}/checkout/fail`,
     });
@@ -178,7 +183,7 @@ export default function CheckoutForm() {
     }
   };
 
-  if (!cart || !phone) return null;
+  if (!cart || phone === undefined) return null;
 
   if (state !== "done" && cart.items.length === 0) {
     return (
@@ -237,8 +242,27 @@ export default function CheckoutForm() {
         </div>
 
         <div style={{ fontSize: 13, fontWeight: 800, marginTop: 8 }}>발송인(주문자) 정보</div>
-        <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 전화번호 (로그인 계정)</label>
-        <div className="input" style={{ background: "var(--line)", color: "var(--muted)" }}>{phone}</div>
+
+        {!phone && (
+          <p style={{ fontSize: 12, color: "var(--muted)", margin: "-4px 0 2px" }}>
+            비회원도 주문할 수 있어요. 로그인하면 계좌이체 적립금 혜택을 받을 수 있어요 —{" "}
+            <Link href={`/login?next=/checkout`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+              로그인하기
+            </Link>
+          </p>
+        )}
+
+        <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 전화번호{phone ? " (로그인 계정)" : ""}</label>
+        {phone ? (
+          <div className="input" style={{ background: "var(--line)", color: "var(--muted)" }}>{phone}</div>
+        ) : (
+          <input
+            className="input"
+            value={form.senderPhone}
+            onChange={update("senderPhone")}
+            placeholder="010-0000-0000"
+          />
+        )}
         <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 성함</label>
         <input className="input" value={form.senderName} onChange={update("senderName")} placeholder="입금자명과 동일하게 적어주세요" />
         <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 주소</label>

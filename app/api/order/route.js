@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { revalidateTag } from "next/cache";
 import { randomUUID } from "crypto";
-import { verifySessionToken, SESSION_COOKIE, getMembers } from "@/lib/auth";
+import { verifySessionToken, SESSION_COOKIE, getMembers, normalizePhone } from "@/lib/auth";
 import { resolveShippingFees } from "@/lib/shipping";
 import { buildLineItems } from "@/lib/orderLineItems";
 import { resolveUsablePoints, applyRewardDiscount } from "@/lib/rewardPoints";
@@ -15,14 +15,18 @@ const REQUIRED_FIELDS = ["senderName", "senderAddress", "recipientName", "recipi
 
 export async function POST(req) {
   const session = verifySessionToken(cookies().get(SESSION_COOKIE)?.value);
-  if (!session?.phone) {
-    return Response.json({ ok: false, error: "로그인이 필요해요." }, { status: 401 });
-  }
-
   const body = await req.json();
   const isCard = body.paymentMethod === "card";
 
-  if (isCard && !isCardPaymentAllowed(session.phone)) {
+  // 비회원 주문: 로그인 세션이 없으면 주문서에 직접 입력한 전화번호를 쓴다.
+  // 로그인 세션이 있으면 (스푸핑 방지를 위해) 항상 세션의 전화번호를 쓰고, 입력값은 무시한다.
+  const guestPhone = normalizePhone(body.senderPhone);
+  const senderPhone = session?.phone || guestPhone;
+  if (!senderPhone || senderPhone.length < 9) {
+    return Response.json({ ok: false, error: "발송인 전화번호를 정확히 입력해주세요." }, { status: 400 });
+  }
+
+  if (isCard && !isCardPaymentAllowed(senderPhone)) {
     return Response.json({ ok: false, error: "카드결제는 아직 준비 중이에요. 계좌이체로 주문해주세요." }, { status: 403 });
   }
 
@@ -47,15 +51,19 @@ export async function POST(req) {
 
   const resolvedItems = resolveShippingFees(items);
 
-  // 적립금 사용액 — 클라이언트가 보낸 값은 그대로 믿지 않고, 보유 잔액을 다시 조회해서 확인한다.
-  const members = await getMembers();
-  const availablePoints = members.find((m) => m.phone === session.phone)?.rewardPoints || 0;
+  // 적립금은 로그인된(본인 확인된) 회원만 쓸 수 있다 — 비회원 주문에서 남의 전화번호를
+  // 입력해 적립금을 훔쳐 쓰는 걸 막기 위해, 세션이 없으면 적립금 조회/사용 자체를 건너뛴다.
+  let usedPoints = 0;
   const built = buildLineItems(resolvedItems);
-  const usedPoints = resolveUsablePoints(availablePoints, body.usedPoints, built.totalAmount);
+  if (session?.phone) {
+    const members = await getMembers();
+    const availablePoints = members.find((m) => m.phone === session.phone)?.rewardPoints || 0;
+    usedPoints = resolveUsablePoints(availablePoints, body.usedPoints, built.totalAmount);
+  }
 
   const senderInfo = {
     senderName: String(body.senderName).trim(),
-    senderPhone: session.phone,
+    senderPhone,
     senderAddress: String(body.senderAddress).trim(),
     recipientName: String(body.recipientName).trim(),
     recipientPhone: String(body.recipientPhone).trim(),

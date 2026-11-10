@@ -13,7 +13,7 @@ import ProductTestimonials from "./ProductTestimonials";
 import ReviewSection from "./ReviewSection";
 import { getDiscount } from "@/lib/pricing";
 import { getReviews } from "@/lib/reviews";
-import { ISLAND_SHIPPING_NOTICE, NEUTRAL_SHIPPING_CUTOFF, resolveShippingCutoff } from "@/lib/shippingNotice";
+import { ISLAND_SHIPPING_NOTICE, SAME_DAY_SHIPPING_NOTICE } from "@/lib/shippingNotice";
 
 export const revalidate = 60;
 
@@ -60,10 +60,6 @@ export default async function ProductPage({ params }) {
   if (!product || product.status === "등록대기") notFound();
 
   const description = sanitizePublicDescription(product.description, SUPPLIERS);
-  const shippingCutoff = resolveShippingCutoff({
-    shippingCutoff: product.shippingCutoff,
-    description,
-  });
 
   const s = STATUS_STYLE[product.status] || STATUS_STYLE["주문가능"];
   const discount = getDiscount(product.listPrice, product.price);
@@ -181,9 +177,7 @@ export default async function ProductPage({ params }) {
       >
         <div style={{ fontWeight: 800, marginBottom: 4 }}>배송 안내</div>
         <div style={{ color: "var(--muted)" }}>
-          {(shippingCutoff || NEUTRAL_SHIPPING_CUTOFF).split("\n").filter(Boolean).map((line) => (
-            <div key={line}>{line}</div>
-          ))}
+          <div>{SAME_DAY_SHIPPING_NOTICE}</div>
           <div style={{ marginTop: 4 }}>
             {ISLAND_SHIPPING_NOTICE} 안내된 발송 예정일보다 3일 이상 지연되면 취소·전액 환불이 가능해요.
           </div>

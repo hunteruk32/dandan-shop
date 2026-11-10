@@ -1,10 +1,13 @@
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
 import { VISITOR_COOKIE } from "@/lib/constants";
+import { isValidProductId } from "@/lib/productId";
 
 function extractProductId(path) {
   const m = /^\/product\/([^/?#]+)/.exec(path || "");
-  return m ? m[1] : null;
+  if (!m) return null;
+  // 깨진 링크·봇이 보낸 비정상 경로(예: 이중 인코딩된 문자열)는 상품으로 집계하지 않는다.
+  return isValidProductId(m[1]) ? m[1] : null;
 }
 
 export async function POST(req) {

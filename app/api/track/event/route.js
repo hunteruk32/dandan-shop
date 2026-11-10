@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
 import { VISITOR_COOKIE } from "@/lib/constants";
+import { isValidProductId } from "@/lib/productId";
 
 // 전환 퍼널 분석에 쓰는 커스텀 이벤트. pageview/order_item 외의 이벤트는 여기로 받되,
 // 임의 문자열이 쌓이지 않도록 화이트리스트로 제한한다.
@@ -12,7 +13,8 @@ export async function POST(req) {
     const eventType = String(body.type || "");
     if (!ALLOWED_TYPES.has(eventType)) return Response.json({ ok: false }, { status: 400 });
 
-    const productId = body.productId ? String(body.productId).slice(0, 50) : null;
+    const rawProductId = body.productId ? String(body.productId).slice(0, 50) : null;
+    const productId = isValidProductId(rawProductId) ? rawProductId : null;
     const sessionId = cookies().get(VISITOR_COOKIE)?.value || null;
 
     await sql`

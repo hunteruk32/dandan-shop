@@ -362,7 +362,7 @@ function handleStatusRequest(body) {
 const REWARD_PROGRAM_START = new Date("2026-11-09T00:00:00+09:00");
 
 // lib/benefitExclusions.js 의 목록과 같게 유지한다. 미끼 상품은 적립·사용 대상이 아니다.
-var BENEFIT_EXCLUDED_PRODUCT_IDS = { p079: true };
+var BENEFIT_EXCLUDED_PRODUCT_IDS = { p079: true, p001: true };
 var REWARD_EXCLUDED_MARK = "[적립제외]";
 
 function isBenefitExcludedProduct(productId) {

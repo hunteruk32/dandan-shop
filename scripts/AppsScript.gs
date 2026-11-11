@@ -90,6 +90,10 @@
  * 적립되고, 체크아웃에서 적립금을 쓰면(usedPoints) handleCreate에서 그만큼 차감됩니다.
  * 카드결제 주문은 적립 대상이 아닙니다(계좌이체 유도용). 회원 시트에 H열 "적립금"을
  * 미리 추가해주세요 — 숫자만 들어가며, 비어있으면 0으로 취급합니다.
+ * 미끼 상품(BENEFIT_EXCLUDED_PRODUCT_IDS, lib/benefitExclusions.js와 같은 목록)은
+ * 적립도 사용도 되지 않습니다. 해당 줄의 수정이력에 "[적립제외]"가 남고, 구매확정 때
+ * 그 표시가 있으면 1% 적립을 건너뜁니다. 목록을 바꾸면 이 파일과 JS 목록을 같이 고친 뒤
+ * 웹 앱을 새 버전으로 배포해야 적립 제외가 반영됩니다.
  */
 function doPost(e) {
   const body = JSON.parse(e.postData.contents);
@@ -133,6 +137,11 @@ function handleCreate(body) {
   const historyEntry = historyLines.join("\n");
 
   items.forEach(function (it) {
+    var rowHistory = historyEntry;
+    if (lineExcludesReward(it)) {
+      var markLine = orderedAt + " " + REWARD_EXCLUDED_MARK + (it.productId ? " " + it.productId : "");
+      rowHistory = rowHistory ? rowHistory + "\n" + markLine : markLine;
+    }
     sheet.appendRow([
       orderId,
       orderedAt,
@@ -155,7 +164,7 @@ function handleCreate(body) {
       "",
       "",
       body.note || "",
-      historyEntry,
+      rowHistory,
     ]);
   });
 
@@ -352,13 +361,30 @@ function handleStatusRequest(body) {
 // 나중에 구매확정되더라도 소급 적립하지 않는다.
 const REWARD_PROGRAM_START = new Date("2026-11-09T00:00:00+09:00");
 
+// lib/benefitExclusions.js 의 목록과 같게 유지한다. 미끼 상품은 적립·사용 대상이 아니다.
+var BENEFIT_EXCLUDED_PRODUCT_IDS = { p079: true };
+var REWARD_EXCLUDED_MARK = "[적립제외]";
+
+function isBenefitExcludedProduct(productId) {
+  var id = String(productId || "").replace(/^\s+|\s+$/g, "");
+  return BENEFIT_EXCLUDED_PRODUCT_IDS[id] === true;
+}
+
+// Next.js가 rewardExcluded를 실어 보내거나, 상품 id가 제외 목록에 있으면 그 줄은 적립하지 않는다.
+function lineExcludesReward(it) {
+  return !!(it && (it.rewardExcluded === true || isBenefitExcludedProduct(it.productId)));
+}
+
 // 계좌이체 주문이 구매확정되면 그 줄(품목) 금액의 1%를 적립해준다. 카드결제 주문
 // (토스결제키가 있는 줄)이거나, 적립금 제도 시행일 전에 들어온 주문은 적립 대상이 아니다.
+// 주문 접수 때 "[적립제외]"가 수정이력에 남은 줄(미끼 상품)도 적립하지 않는다.
 // 적립된 금액(0이면 적립 없음)을 반환한다.
 function awardBankTransferReward(sheet, rowNum) {
   const row = sheet.getRange(rowNum, 1, 1, 22).getValues()[0];
   const paymentKey = String(row[17] || "").trim(); // 토스결제키
   if (paymentKey) return 0;
+  const history = String(row[21] || ""); // 수정이력
+  if (history.indexOf(REWARD_EXCLUDED_MARK) !== -1) return 0;
   const orderedAt = new Date(row[1]); // 주문일시
   if (isNaN(orderedAt.getTime()) || orderedAt < REWARD_PROGRAM_START) return 0;
   const amount = Number(row[13]) || 0; // 합계금액

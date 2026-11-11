@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ORDER_STATUS_STYLE, ORDER_STATUS_DEFAULT_STYLE } from "@/lib/catalog";
+import { REWARD_EXCLUDED_MARK } from "@/lib/benefitExclusions";
 
 function groupOrders(orders) {
   const map = new Map();
@@ -255,7 +256,9 @@ export default function ReservationSearch({ orders, myPhone }) {
           const isExpanded = expandedId === order.id;
           const isEditing = editingId === order.id;
           const canEdit = order.paymentStatus === "입금대기";
-          const historyLines = order.history ? order.history.split("\n").filter(Boolean) : [];
+          const historyLines = order.history
+            ? order.history.split("\n").filter((line) => line && !line.includes(REWARD_EXCLUDED_MARK))
+            : [];
 
           // 주문 상품 전체가 취소/반품/교환됐으면, 더 이상 의미 없는 결제상태("카드결제완료" 등)
           // 대신 그 최종 상태를 맨 위 배지에 보여준다. 일부만 취소된 경우는 헷갈리지 않도록

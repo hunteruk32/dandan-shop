@@ -8,7 +8,10 @@ import TrustBadges from "../TrustBadges";
 import AddressSearchField, { combineAddress } from "../AddressSearchField";
 import TossPaymentWidget from "./TossPaymentWidget";
 import { isCardPaymentAllowed } from "@/lib/cardPayment";
-import { REWARD_USE_THRESHOLD } from "@/lib/rewardPoints";
+import { REWARD_USE_THRESHOLD, pointsEligibleAmount } from "@/lib/rewardPoints";
+import { buildLineItems } from "@/lib/orderLineItems";
+import { resolveShippingFees } from "@/lib/shipping";
+import { isBenefitExcludedProduct } from "@/lib/benefitExclusions";
 
 export default function CheckoutForm() {
   const cart = useCart();
@@ -37,7 +40,11 @@ export default function CheckoutForm() {
   const requestTossPaymentRef = useRef(null);
   const cardPaymentEnabled = isCardPaymentAllowed(phone || form.senderPhone);
 
-  const usedPoints = Math.min(Math.max(0, Number(usedPointsInput) || 0), rewardPoints, cart?.total || 0);
+  const pointsBase = cart?.items?.length
+    ? pointsEligibleAmount(buildLineItems(resolveShippingFees(cart.items)).lineItems)
+    : 0;
+  const hasExcludedItem = (cart?.items || []).some((it) => isBenefitExcludedProduct(it.productId));
+  const usedPoints = Math.min(Math.max(0, Number(usedPointsInput) || 0), rewardPoints, pointsBase);
   const payableTotal = (cart?.total || 0) - usedPoints;
 
   useEffect(() => {
@@ -245,10 +252,16 @@ export default function CheckoutForm() {
 
         {!phone && (
           <p style={{ fontSize: 12, color: "var(--muted)", margin: "-4px 0 2px" }}>
-            비회원도 주문할 수 있어요. 로그인하면 계좌이체 적립금 혜택을 받을 수 있어요 —{" "}
-            <Link href={`/login?next=/checkout`} style={{ color: "var(--accent)", fontWeight: 700 }}>
-              로그인하기
-            </Link>
+            비회원도 주문할 수 있어요.
+            {pointsBase > 0 && (
+              <>
+                {" "}
+                로그인하면 계좌이체 적립금 혜택을 받을 수 있어요 —{" "}
+                <Link href={`/login?next=/checkout`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+                  로그인하기
+                </Link>
+              </>
+            )}
           </p>
         )}
 
@@ -313,14 +326,14 @@ export default function CheckoutForm() {
           </div>
         </div>
 
-        {rewardPoints >= REWARD_USE_THRESHOLD && (
+        {rewardPoints >= REWARD_USE_THRESHOLD && pointsBase > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
             <label style={{ fontSize: 13, fontWeight: 700 }}>적립금 사용 (보유: {rewardPoints.toLocaleString()}원)</label>
             <input
               className="input"
               type="number"
               min="0"
-              max={Math.min(rewardPoints, cart.total)}
+              max={Math.min(rewardPoints, pointsBase)}
               value={usedPointsInput}
               onChange={(e) => setUsedPointsInput(e.target.value)}
               placeholder="사용할 적립금을 입력하세요"
@@ -358,8 +371,12 @@ export default function CheckoutForm() {
             카드결제{!cardPaymentEnabled && " (준비중)"}
           </button>
         </div>
-        <p style={{ fontSize: 12, color: "var(--accent)", margin: 0 }}>
-          🎁 계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (5000원 이상 적립시 다음주문에서 사용가능)
+        <p style={{ fontSize: 12, color: hasExcludedItem ? "var(--muted)" : "var(--accent)", margin: 0 }}>
+          {pointsBase <= 0
+            ? "이 주문 상품은 적립금 적립·사용 대상이 아니에요."
+            : hasExcludedItem
+              ? "적립 제외 상품에는 적립금이 쌓이지 않고 사용할 수도 없어요. 나머지 금액은 계좌이체 구매확정 시 1%가 적립돼요."
+              : "🎁 계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (5000원 이상 적립시 다음주문에서 사용가능)"}
         </p>
         <p style={{ fontSize: 12, color: "var(--muted)", margin: 0 }}>
           💡 계좌이체 시 비고에 남겨주시면 사업자지출증빙 또는 현금영수증 발급해드려요
@@ -421,6 +438,12 @@ export default function CheckoutForm() {
                 현재 보유 적립금: <b style={{ color: "var(--spice)" }}>{rewardPoints.toLocaleString()}원</b>
                 <br />
                 적립금이 <b style={{ color: "var(--ink)" }}>5,000원 이상</b> 쌓이면 다음 주문부터 자유롭게 사용할 수 있어요.
+                {hasExcludedItem ? (
+                  <>
+                    <br />
+                    이번 주문에 담긴 적립 제외 상품에는 이 혜택이 적용되지 않아요.
+                  </>
+                ) : null}
               </p>
               <button className="btn" style={{ width: "100%" }} onClick={() => setShowRewardNotice(false)}>
                 확인

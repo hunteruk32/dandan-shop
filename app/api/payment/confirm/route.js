@@ -27,7 +27,11 @@ export async function POST(req) {
   const payload = pending[0].payload;
 
   const built = buildLineItems(payload.resolvedItems || []);
-  const { lineItems, totalAmount } = applyRewardDiscount(built.lineItems, built.totalAmount, payload.usedPoints || 0);
+  const { lineItems, totalAmount, usedPoints } = applyRewardDiscount(
+    built.lineItems,
+    built.totalAmount,
+    payload.usedPoints || 0
+  );
   if (totalAmount !== amount) {
     return Response.json({ ok: false, error: "결제 금액이 주문 금액과 일치하지 않아요." }, { status: 400 });
   }
@@ -57,7 +61,7 @@ export async function POST(req) {
       items: lineItems,
       paymentMethod: "card",
       paymentKey,
-      usedPoints: payload.usedPoints || 0,
+      usedPoints,
     }),
     redirect: "follow",
   });

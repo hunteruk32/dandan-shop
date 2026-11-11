@@ -58,8 +58,10 @@ export default async function HomePage() {
     getRecentPublicReviews(24).catch(() => []),
   ]);
   // 목록 RSC payload도 손님용 객체만 담는다. 설명은 카드에서 안 쓰므로 비운다.
+  // 시즌종료 상품은 구매가 안 되니 홈페이지 목록에서 아예 뺀다(상품 상세 직접 링크는
+  // 그대로 접근 가능하게 둬서 기존 북마크·검색 결과는 안 깨지게 한다).
   const products = rawProducts
-    .filter((p) => p.status !== "등록대기")
+    .filter((p) => p.status !== "등록대기" && p.status !== "시즌종료")
     .map((p) => ({
       ...toPublicProduct(p, SUPPLIERS),
       description: "",

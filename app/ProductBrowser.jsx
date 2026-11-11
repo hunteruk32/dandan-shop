@@ -5,7 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { CATEGORIES } from "@/lib/catalog";
 import ProductGridCard from "./ProductGridCard";
 
-const STATUS_OPTIONS = ["주문가능", "품절", "시즌종료"];
+// 시즌종료 상품은 홈페이지에 아예 안 보이게 app/page.jsx에서 미리 걸러지므로
+// (상품 상세 직접 링크는 그대로 접근 가능), 여기선 품절만 다룬다.
+const STATUS_OPTIONS = ["주문가능", "품절"];
 
 const SORT_OPTIONS = [
   { value: "latest", label: "최신순" },
@@ -65,13 +67,11 @@ export default function ProductBrowser({ products }) {
     return sorted;
   };
 
-  // 품절·시즌종료 상품은 구매가 안 되지만 완전히 숨기진 않고(재입고·재시즌 때 다시 찾아올 수 있음),
-  // 기본 목록에서는 "주문가능" 먼저, 품절, 시즌종료 순으로 뒤로 보낸다
-  // ("상태: 품절"/"상태: 시즌종료" 탭에서는 각각 모아볼 수 있음).
-  const available = filtered.filter((p) => p.status !== "품절" && p.status !== "시즌종료");
+  // 품절 상품은 구매가 안 되지만 완전히 숨기진 않고(재입고 때 다시 찾아올 수 있음),
+  // 기본 목록에서는 "주문가능" 먼저, 품절은 뒤로 보낸다("상태: 품절" 탭에서는 모아볼 수 있음).
+  const available = filtered.filter((p) => p.status !== "품절");
   const soldOut = filtered.filter((p) => p.status === "품절");
-  const ended = filtered.filter((p) => p.status === "시즌종료");
-  const shownProducts = [...sortGroup(available), ...sortGroup(soldOut), ...sortGroup(ended)];
+  const shownProducts = [...sortGroup(available), ...sortGroup(soldOut)];
 
   return (
     <>

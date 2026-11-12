@@ -8,6 +8,7 @@ import ProductAssetsLink from "./ProductAssetsLink";
 import HolidayNotice from "./HolidayNotice";
 import CardPaymentNotice from "./CardPaymentNotice";
 import RewardPointsNotice from "./RewardPointsNotice";
+import FirstOrderBonusNotice from "./FirstOrderBonusNotice";
 import SiteHeader from "./SiteHeader";
 import OpenChatBanner from "./OpenChatBanner";
 import CategoryQuickGrid from "./CategoryQuickGrid";
@@ -78,6 +79,7 @@ export default async function HomePage() {
       <HolidayNotice />
       <CardPaymentNotice />
       <RewardPointsNotice />
+      <FirstOrderBonusNotice />
 
       <SiteHeader presentCategories={presentCategories} />
 

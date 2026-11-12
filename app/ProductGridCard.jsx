@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { STATUS_STYLE } from "@/lib/catalog";
-import { getDiscount } from "@/lib/pricing";
+import { getDiscount, getDisplayStartOption } from "@/lib/pricing";
 
 export default function ProductGridCard({ product, rank }) {
   const s = STATUS_STYLE[product.status] || STATUS_STYLE["주문가능"];
-  const discount = getDiscount(product.listPrice, product.price);
+  const startOption = getDisplayStartOption(product.options);
+  const startPrice = startOption ? startOption.price : product.price;
+  const startListPrice = startOption ? startOption.listPrice : product.listPrice;
+  const discount = getDiscount(startListPrice, startPrice);
   return (
     <Link href={`/product/${product.id}`} className="grid-card">
       <div style={{ position: "relative" }}>
@@ -24,7 +27,20 @@ export default function ProductGridCard({ product, rank }) {
       </div>
       <div className="grid-card-body">
         <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 3 }}>{product.category}</div>
-        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, lineHeight: 1.35 }}>{product.name}</div>
+        <div
+          style={{
+            fontWeight: 700,
+            fontSize: 14,
+            marginBottom: 8,
+            lineHeight: 1.35,
+            display: "-webkit-box",
+            WebkitLineClamp: 1,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {product.name}
+        </div>
         {discount ? (
           <div style={{ fontSize: 12, color: "var(--muted)", textDecoration: "line-through", marginBottom: 1 }}>
             {discount.listPrice.toLocaleString()}원
@@ -34,10 +50,12 @@ export default function ProductGridCard({ product, rank }) {
           <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
             {discount ? <span style={{ fontWeight: 800, fontSize: 13, color: "var(--spice)" }}>{discount.rate}%</span> : null}
             <div className="price" style={{ margin: 0 }}>
-              {product.price.toLocaleString()}원{product.options.length > 1 ? "부터" : ""}
+              {startPrice.toLocaleString()}원{product.options.length > 1 ? "부터" : ""}
             </div>
           </div>
-          <span className="badge" style={{ background: s.bg, color: s.fg }}>{product.status}</span>
+          {product.status === "품절" ? (
+            <span className="badge" style={{ background: s.bg, color: s.fg }}>{product.status}</span>
+          ) : null}
         </div>
         <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
           배송비 {product.shippingFee ? `${product.shippingFee.toLocaleString()}원` : "무료"}

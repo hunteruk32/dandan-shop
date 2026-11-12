@@ -37,6 +37,8 @@ export default function ProductBrowser({ products }) {
   useEffect(() => {
     const fromUrl = searchParams.get("category");
     if (fromUrl && categories.includes(fromUrl)) setActiveCategory(fromUrl);
+    const q = searchParams.get("q");
+    if (q) setKeyword(q);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -75,16 +77,20 @@ export default function ProductBrowser({ products }) {
 
   return (
     <>
-      <div style={{ position: "relative", marginBottom: 14 }}>
-        <input
-          type="search"
-          className="input"
-          placeholder="상품 이름으로 검색"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          style={{ width: "100%" }}
-        />
-      </div>
+      {keyword ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, fontSize: 13 }}>
+          <span>
+            <b>"{keyword}"</b> 검색 결과
+          </span>
+          <button
+            type="button"
+            onClick={() => setKeyword("")}
+            style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 0, fontSize: 12.5, textDecoration: "underline" }}
+          >
+            검색 지우기
+          </button>
+        </div>
+      ) : null}
 
       <div className="tabs">
         <button

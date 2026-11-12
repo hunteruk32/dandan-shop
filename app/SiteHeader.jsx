@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getProducts, CATEGORIES } from "@/lib/sheet";
 import CartLink from "./CartLink";
 import AuthStatus from "./AuthStatus";
+import HeaderSearch from "./HeaderSearch";
 
 async function getDefaultCategories() {
   const products = await getProducts();
@@ -17,19 +18,24 @@ export default async function SiteHeader({ presentCategories }) {
   return (
     <div className="site-header">
       <div className="site-header-bar">
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div className="seal" style={{ width: 44, height: 44 }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div className="seal" style={{ width: 38, height: 38 }}>
             <img src="/brand-icon.png" alt="단단상회" />
           </div>
-          <div>
-            <div className="eyebrow" style={{ color: "var(--spice)" }}>DIRECT TRADE MARKET</div>
-            <div className="serif" style={{ fontSize: 19, fontWeight: 800, color: "var(--ink)" }}>단단상회</div>
-          </div>
+          <div className="serif" style={{ fontSize: 18, fontWeight: 800, color: "var(--ink)" }}>단단상회</div>
         </Link>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
           <AuthStatus dark={false} />
           <CartLink dark={false} />
         </div>
+      </div>
+      <div className="site-header-search" style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <HeaderSearch />
+        </div>
+        <Link href="/reservations" className="mobile-only" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", flexShrink: 0 }}>
+          주문확인
+        </Link>
       </div>
       <nav className="site-nav">
         <Link href="/">전체 카테고리</Link>

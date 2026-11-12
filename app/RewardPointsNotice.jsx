@@ -67,7 +67,7 @@ export default function RewardPointsNotice() {
             현재 보유 적립금: <b style={{ color: "var(--spice)" }}>{rewardPoints.toLocaleString()}원</b>
           </p>
           <p style={{ margin: "6px 0 0", color: "var(--muted)", fontSize: 13 }}>
-            5,000원 이상 적립되면 다음 주문에서 자유롭게 사용할 수 있어요.
+            1,000원 이상 적립되면 다음 주문에서 자유롭게 사용할 수 있어요.
           </p>
         </div>
 

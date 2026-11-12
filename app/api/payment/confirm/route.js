@@ -62,6 +62,7 @@ export async function POST(req) {
       paymentMethod: "card",
       paymentKey,
       usedPoints,
+      utmSource: payload.utmSource || "",
     }),
     redirect: "follow",
   });

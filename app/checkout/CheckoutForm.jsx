@@ -12,6 +12,7 @@ import { REWARD_USE_THRESHOLD, pointsEligibleAmount } from "@/lib/rewardPoints";
 import { buildLineItems } from "@/lib/orderLineItems";
 import { resolveShippingFees } from "@/lib/shipping";
 import { isBenefitExcludedProduct } from "@/lib/benefitExclusions";
+import { trackPurchase } from "@/lib/gtag";
 
 export default function CheckoutForm() {
   const cart = useCart();
@@ -138,19 +139,7 @@ export default function CheckoutForm() {
     setOrderTotal(finalTotal);
     cart.clear();
     setState("done");
-    if (typeof window !== "undefined" && typeof window.gtag === "function") {
-      window.gtag("event", "conversion", {
-        send_to: "AW-18369032939/qjyfCIuoyfIcEOvlhLdE",
-        value: finalTotal,
-        currency: "KRW",
-        transaction_id: finalOrderId || `${form.senderName}-${Date.now()}`,
-      });
-      window.gtag("event", "purchase", {
-        transaction_id: finalOrderId || `${form.senderName}-${Date.now()}`,
-        value: finalTotal,
-        currency: "KRW",
-      });
-    }
+    trackPurchase({ transactionId: finalOrderId, value: finalTotal });
   };
 
   const submitCardPayment = async () => {
@@ -407,7 +396,7 @@ export default function CheckoutForm() {
             ? "이 주문 상품은 적립금 적립·사용 대상이 아니에요."
             : hasExcludedItem
               ? "적립 제외 상품에는 적립금이 쌓이지 않고 사용할 수도 없어요. 나머지 금액은 계좌이체 구매확정 시 1%가 적립돼요."
-              : "🎁 계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (5000원 이상 적립시 다음주문에서 사용가능)"}
+              : "🎁 계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (1000원 이상 적립시 다음주문에서 사용가능)"}
         </p>
         <p style={{ fontSize: 12, color: "var(--muted)", margin: 0 }}>
           💡 계좌이체 시 비고에 남겨주시면 사업자지출증빙 또는 현금영수증 발급해드려요
@@ -468,7 +457,7 @@ export default function CheckoutForm() {
                 <br />
                 현재 보유 적립금: <b style={{ color: "var(--spice)" }}>{rewardPoints.toLocaleString()}원</b>
                 <br />
-                적립금이 <b style={{ color: "var(--ink)" }}>5,000원 이상</b> 쌓이면 다음 주문부터 자유롭게 사용할 수 있어요.
+                적립금이 <b style={{ color: "var(--ink)" }}>1,000원 이상</b> 쌓이면 다음 주문부터 자유롭게 사용할 수 있어요.
                 {hasExcludedItem ? (
                   <>
                     <br />

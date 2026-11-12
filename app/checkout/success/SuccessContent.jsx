@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "../../CartProvider";
+import { trackPurchase } from "@/lib/gtag";
 
 export default function SuccessContent() {
   const params = useSearchParams();
@@ -31,19 +32,7 @@ export default function SuccessContent() {
       .then((data) => {
         if (!data.ok) throw new Error(data.error || "결제 승인에 실패했어요.");
         cart?.clear();
-        if (typeof window !== "undefined" && typeof window.gtag === "function") {
-          window.gtag("event", "conversion", {
-            send_to: "AW-18369032939/qjyfCIuoyfIcEOvlhLdE",
-            value: Number(amount),
-            currency: "KRW",
-            transaction_id: orderId,
-          });
-          window.gtag("event", "purchase", {
-            transaction_id: orderId,
-            value: Number(amount),
-            currency: "KRW",
-          });
-        }
+        trackPurchase({ transactionId: orderId, value: Number(amount) });
         setState("done");
       })
       .catch((err) => {

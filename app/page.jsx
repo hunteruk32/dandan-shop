@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { getProducts, getProductSalesCounts, CATEGORIES, SUPPLIERS } from "@/lib/sheet";
 import { toPublicProduct } from "@/lib/publicProduct";
@@ -81,7 +82,7 @@ export default async function HomePage() {
 
       <SiteHeader presentCategories={presentCategories} />
 
-      <div className="hero hero-compact">
+      <div className="hero">
         <div className="hero-media">
           <video
             className="hero-video"
@@ -96,10 +97,32 @@ export default async function HomePage() {
           <div className="hero-scrim" />
           <div className="hero-inner">
             <div style={{ flex: 1 }}>
-              <p className="hero-tagline">산지에서 식탁까지, 중간 유통 없이 하루 만에</p>
-              <a href="#products" className="btn" style={{ background: "var(--gold)", color: "var(--ink)" }}>
-                오늘의 산지 물건 보기
-              </a>
+              {/* 모바일(390폭)에선 첫 화면에 상품이 바로 보이도록 짧은 태그라인 하나만 보여준다 */}
+              <div className="hero-content-mobile">
+                <p className="hero-tagline">산지에서 식탁까지, 중간 유통 없이 하루 만에</p>
+                <a href="#products" className="btn" style={{ background: "var(--gold)", color: "var(--ink)" }}>
+                  오늘의 산지 물건 보기
+                </a>
+              </div>
+              {/* 데스크톱은 기존 히어로(설명문 + 버튼 2개) 그대로 유지 */}
+              <div className="hero-content-desktop">
+                <div className="hero-eyebrow">산지 직송 도소매</div>
+                <h1 className="hero-title serif">
+                  산지에서 식탁까지,<br />중간 유통 없이 하루 만에
+                </h1>
+                <p className="hero-desc">
+                  최상의 제품을 최선의 가격으로. 전국 산지 협력 농가·어가에서 그날그날 들어온 물건만
+                  엄선해 도매가에 가까운 가격으로 직접 보내드립니다.
+                </p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <a href="#products" className="btn" style={{ background: "var(--gold)", color: "var(--ink)" }}>
+                    오늘의 산지 물건 보기
+                  </a>
+                  <Link href="/reservations" className="btn" style={{ background: "transparent", border: "1.5px solid #55604F", color: "var(--bg)" }}>
+                    내 주문 확인하기
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>

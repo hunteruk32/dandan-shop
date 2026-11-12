@@ -238,12 +238,43 @@ export default function CheckoutForm() {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {cart.items.map((i) => (
-            <div key={i.key} className="card" style={{ justifyContent: "space-between", padding: "10px 14px" }}>
-              <span style={{ fontSize: 13 }}>
+            <div key={i.key} className="card" style={{ justifyContent: "space-between", padding: "10px 14px", gap: 10 }}>
+              <span style={{ fontSize: 13, flex: "1 1 auto", minWidth: 0 }}>
                 {i.productName}
-                {i.optionName ? ` (${i.optionName})` : ""} x{i.qty}
+                {i.optionName ? ` (${i.optionName})` : ""}
               </span>
-              <span style={{ fontWeight: 700, fontSize: 14 }}>{(i.price * i.qty).toLocaleString()}원</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => cart.updateQty(i.key, i.qty - 1)}
+                    disabled={i.qty <= 1}
+                    aria-label="수량 줄이기"
+                    style={{
+                      width: 24, height: 24, borderRadius: 8, border: "1px solid var(--line)",
+                      background: "#fff", fontSize: 14, fontWeight: 700, lineHeight: 1,
+                      color: "var(--ink)", cursor: i.qty <= 1 ? "default" : "pointer",
+                      opacity: i.qty <= 1 ? 0.4 : 1,
+                    }}
+                  >
+                    −
+                  </button>
+                  <span style={{ minWidth: 18, textAlign: "center", fontSize: 13 }}>{i.qty}</span>
+                  <button
+                    type="button"
+                    onClick={() => cart.updateQty(i.key, i.qty + 1)}
+                    aria-label="수량 늘리기"
+                    style={{
+                      width: 24, height: 24, borderRadius: 8, border: "1px solid var(--line)",
+                      background: "#fff", fontSize: 14, fontWeight: 700, lineHeight: 1,
+                      color: "var(--ink)", cursor: "pointer",
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>{(i.price * i.qty).toLocaleString()}원</span>
+              </div>
             </div>
           ))}
         </div>

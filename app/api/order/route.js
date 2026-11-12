@@ -5,7 +5,7 @@ import { verifySessionToken, SESSION_COOKIE, getMembers, normalizePhone } from "
 import { resolveShippingFees } from "@/lib/shipping";
 import { buildLineItems } from "@/lib/orderLineItems";
 import { resolveUsablePoints, applyRewardDiscount, pointsEligibleAmount } from "@/lib/rewardPoints";
-import { VISITOR_COOKIE } from "@/lib/constants";
+import { VISITOR_COOKIE, UTM_SOURCE_COOKIE } from "@/lib/constants";
 import { sql } from "@/lib/db";
 import { isCardPaymentAllowed } from "@/lib/cardPayment";
 import { getProducts, getOrderStatusCounts } from "@/lib/sheet";
@@ -62,6 +62,8 @@ export async function POST(req) {
     usedPoints = resolveUsablePoints(availablePoints, body.usedPoints, pointsEligibleAmount(built.lineItems));
   }
 
+  const utmSource = cookies().get(UTM_SOURCE_COOKIE)?.value || "";
+
   const senderInfo = {
     senderName: String(body.senderName).trim(),
     senderPhone,
@@ -70,6 +72,7 @@ export async function POST(req) {
     recipientPhone: String(body.recipientPhone).trim(),
     recipientAddress: String(body.recipientAddress).trim(),
     note: String(body.note || "").trim(),
+    utmSource,
   };
 
   if (isCard) {

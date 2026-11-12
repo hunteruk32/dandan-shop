@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getInternalProducts } from "@/lib/sheet";
+import { getInternalProducts, getOrders } from "@/lib/sheet";
 import { getSummary, getTimeSeries, getProductPerformance, getHourlyDistribution, getFunnel, resolveRange, PERIODS } from "@/lib/analytics";
 import { getEngagementSummary, getEngagementByPage, isGa4Configured } from "@/lib/ga4";
 import AdminLogoutButton from "../AdminLogoutButton";
@@ -65,6 +65,31 @@ function FunnelChart({ data }) {
   );
 }
 
+// 매입현황 시트는 주문 하나당 품목 수만큼 행이 쌓인다(품목별 1행). 주문번호(id) 기준으로
+// 묶어서 "주문 단위" 요약으로 만든다 — 발송인·유입경로 등은 같은 주문이면 모든 행이 같은
+// 값이라 첫 행 것만 쓰면 된다.
+function groupOrdersById(orders) {
+  const map = new Map();
+  for (const o of orders) {
+    if (!map.has(o.id)) {
+      map.set(o.id, {
+        id: o.id,
+        orderedAt: o.orderedAt,
+        senderName: o.senderName,
+        paymentStatus: o.paymentStatus,
+        orderStatus: o.orderStatus,
+        utmSource: o.utmSource,
+        items: [],
+        totalAmount: 0,
+      });
+    }
+    const group = map.get(o.id);
+    group.items.push(o.item);
+    group.totalAmount += o.totalAmount;
+  }
+  return Array.from(map.values()).sort((a, b) => (a.orderedAt < b.orderedAt ? 1 : -1));
+}
+
 function toDateInputValue(d) {
   return d.toISOString().slice(0, 10);
 }
@@ -82,7 +107,7 @@ export default async function AdminDashboardPage({ searchParams }) {
   const to = searchParams?.to || "";
   const range = resolveRange(period, from, to);
 
-  const [summary, visitSeries, orderSeries, productPerf, hourly, funnel, products, engagement, engagementByPage] = await Promise.all([
+  const [summary, visitSeries, orderSeries, productPerf, hourly, funnel, products, engagement, engagementByPage, orders] = await Promise.all([
     getSummary(range),
     getTimeSeries("pageview", period, range),
     getTimeSeries("order_item", period, range),
@@ -92,10 +117,12 @@ export default async function AdminDashboardPage({ searchParams }) {
     getInternalProducts(),
     getEngagementSummary(range),
     getEngagementByPage(range),
+    getOrders(),
   ]);
 
   const productMap = new Map(products.map((p) => [p.id, { name: p.name, category: p.category }]));
   const presetPeriods = Object.entries(PERIODS).filter(([key]) => key !== "custom");
+  const recentOrders = groupOrdersById(orders).slice(0, 30);
 
   return (
     <div className="wrap" style={{ maxWidth: 1100 }}>
@@ -248,6 +275,52 @@ export default async function AdminDashboardPage({ searchParams }) {
                     </tr>
                   );
                 })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="section-head">
+        <h2 className="section-title">최근 주문</h2>
+        <div style={{ fontSize: 12, color: "var(--muted)" }}>최신 {recentOrders.length}건 · 유입경로(첫 방문 utm_source) 포함</div>
+      </div>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden", marginBottom: 40 }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: "#F6F4EE", textAlign: "left" }}>
+                <th style={{ padding: "10px 14px" }}>주문번호</th>
+                <th style={{ padding: "10px 14px" }}>주문일시</th>
+                <th style={{ padding: "10px 14px" }}>발송인</th>
+                <th style={{ padding: "10px 14px" }}>품목</th>
+                <th style={{ padding: "10px 14px", textAlign: "right" }}>합계금액</th>
+                <th style={{ padding: "10px 14px" }}>상태</th>
+                <th style={{ padding: "10px 14px" }}>유입경로</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ padding: 20, textAlign: "center", color: "var(--muted)" }}>
+                    주문이 아직 없어요.
+                  </td>
+                </tr>
+              ) : (
+                recentOrders.map((o) => (
+                  <tr key={o.id} style={{ borderTop: "1px solid var(--line)" }}>
+                    <td style={{ padding: "10px 14px", color: "var(--muted)" }}>{o.id}</td>
+                    <td style={{ padding: "10px 14px", color: "var(--muted)" }}>{o.orderedAt}</td>
+                    <td style={{ padding: "10px 14px" }}>{o.senderName}</td>
+                    <td style={{ padding: "10px 14px", fontWeight: 700 }}>
+                      {o.items[0]}
+                      {o.items.length > 1 ? ` 외 ${o.items.length - 1}건` : ""}
+                    </td>
+                    <td style={{ padding: "10px 14px", textAlign: "right" }}>{o.totalAmount.toLocaleString()}원</td>
+                    <td style={{ padding: "10px 14px", color: "var(--muted)" }}>{o.orderStatus || o.paymentStatus}</td>
+                    <td style={{ padding: "10px 14px", color: "var(--muted)" }}>{o.utmSource || "-"}</td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

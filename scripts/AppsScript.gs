@@ -99,6 +99,13 @@
  * 적립도 사용도 되지 않습니다. 해당 줄의 수정이력에 "[적립제외]"가 남고, 구매확정 때
  * 그 표시가 있으면 1% 적립을 건너뜁니다. 목록을 바꾸면 이 파일과 JS 목록을 같이 고친 뒤
  * 웹 앱을 새 버전으로 배포해야 적립 제외가 반영됩니다.
+ *
+ * 회원 시트 I열(9번째 열, "첫주문적립판정")은 가입 후 첫 주문 추가 적립(웰컴 적립,
+ * tryFirstOrderBonus 참고) 판정 결과를 적어두는 칸입니다 — 미리 I열을 추가해주세요
+ * (헤더: 첫주문적립판정). 값이 비어있으면 아직 판정 전, 한 번 판정되면(지급/미달 여부와
+ * 무관하게) 그 회원은 다시 판정하지 않습니다 — 평생 1번만 지급되고, 과거에 이미 가입 후
+ * 주문을 끝낸 회원에게는 소급 지급되지 않습니다(이 코드가 배포된 뒤로 어떤 주문이 "최종
+ * 상태"가 될 때만 판정이 실행되기 때문).
  */
 function doPost(e) {
   const body = JSON.parse(e.postData.contents);
@@ -358,6 +365,8 @@ function handleStatusRequest(body) {
   const prevHistory = String(historyCell.getValue() || "").trim();
   historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
 
+  tryFirstOrderBonus(sheet, targetRowNum); // 취소완료로 끝난 경우 등, 첫 주문 판정이 걸려있을 수 있음
+
   triggerRevalidate("orders");
 
   return jsonOutput({ ok: true, newStatus: newStatus });
@@ -398,6 +407,104 @@ function awardBankTransferReward(sheet, rowNum) {
   if (reward <= 0) return 0;
   adjustRewardPoints(row[4], reward); // 발송인 전화번호
   return reward;
+}
+
+// ── 가입 후 첫 주문 추가 적립(웰컴 적립) ──
+// 가입 후 "진짜 첫 주문"(취소/반품으로 전부 빠진 주문은 제외)이 3만원 이상이면 2,000원을
+// 추가 적립한다(결제수단 무관, 계좌이체 1% 적립과는 별개로 더해짐). 이번 주문 결제금액에서
+// 바로 깎이지 않고 적립금으로만 쌓여서 다음 주문부터 쓸 수 있다. 회원마다 평생 1번만
+// 지급되며, 한 번 "첫 주문이 뭔지" 판정이 끝나면(지급 여부와 무관하게) 다시 판정하지 않는다.
+// 미끼 상품(BENEFIT_EXCLUDED_PRODUCT_IDS) 금액은 3만원 계산에서도 빠진다.
+//
+// 이 판정은 한 주문의 모든 품목(행)이 "최종 상태"(구매확정/취소완료/반품완료/교환완료)가
+// 됐을 때만 의미가 있으므로, 품목 하나가 최종 상태로 바뀔 때마다(고객의 구매확정, 72시간
+// 자동 구매확정, 카드결제 자동 취소, 사장님이 시트에서 직접 취소완료/반품완료/교환완료로
+// 바꾸는 경우 전부) 호출해서 그때마다 다시 확인한다 — 아직 더 이른 주문이 진행 중이면
+// 판정을 미루고, 다음에 그 주문이 끝날 때 다시 평가된다.
+//
+// 회원 시트 9번째 열(I열, "첫주문적립판정")에 결과를 적어 중복 지급을 막는다. 이 열이
+// 비어있지 않으면(판정 완료) 더 이상 평가하지 않는다 — 회원 시트에 I열을 미리
+// 추가해주세요(헤더: 첫주문적립판정).
+const WELCOME_BONUS_AMOUNT = 2000;
+const WELCOME_BONUS_MIN_ORDER_AMOUNT = 30000;
+const FINAL_ORDER_STATUSES = { "구매확정": true, "취소완료": true, "반품완료": true, "교환완료": true };
+const CANCELLED_ORDER_STATUSES = { "취소완료": true, "반품완료": true };
+
+function tryFirstOrderBonus(sheet, rowNum) {
+  try {
+    const row = sheet.getRange(rowNum, 1, 1, 22).getValues()[0];
+    const orderStatus = String(row[15] || "").trim(); // 발주 상태
+    if (!FINAL_ORDER_STATUSES[orderStatus]) return; // 이 품목이 아직 최종 상태가 아니면 평가할 필요 없음
+
+    const memberSheetId = PropertiesService.getScriptProperties().getProperty("MEMBER_SHEET_ID");
+    if (!memberSheetId) return;
+    const phone = String(row[4] || "").replace(/[^0-9]/g, ""); // 발송인 전화번호
+    if (!phone) return;
+
+    const memberSheet = SpreadsheetApp.openById(memberSheetId).getSheets()[0];
+    const memberRow = findMemberRow(memberSheet, phone);
+    if (memberRow === -1) return; // 회원이 아니면(비회원 주문) 대상 아님
+
+    const flagCell = memberSheet.getRange(memberRow, 9); // 첫주문적립판정
+    if (String(flagCell.getValue() || "").trim()) return; // 이미 판정 끝남(지급됐든 안 됐든)
+
+    const signupAtRaw = memberSheet.getRange(memberRow, 3).getValue(); // 가입일시
+    const signupAt = signupAtRaw ? new Date(signupAtRaw) : null;
+
+    const orderData = sheet.getDataRange().getValues();
+    const byOrder = {}; // orderId -> { orderedAt, rows: [{ status, amount, excluded }] }
+    for (let i = 1; i < orderData.length; i++) {
+      const r = orderData[i];
+      const rPhone = String(r[4] || "").replace(/[^0-9]/g, "");
+      if (rPhone !== phone) continue;
+      const orderedAt = new Date(r[1]);
+      if (isNaN(orderedAt.getTime())) continue;
+      if (signupAt && !isNaN(signupAt.getTime()) && orderedAt < signupAt) continue; // 가입 전 주문은 대상 아님
+      const orderId = String(r[0] || "").trim();
+      if (!orderId) continue;
+      if (!byOrder[orderId]) byOrder[orderId] = { orderedAt: orderedAt, rows: [] };
+      byOrder[orderId].rows.push({
+        status: String(r[15] || "").trim(),
+        amount: Number(r[13]) || 0,
+        excluded: String(r[21] || "").indexOf(REWARD_EXCLUDED_MARK) !== -1,
+      });
+    }
+
+    const orderIds = Object.keys(byOrder).sort(function (a, b) {
+      return byOrder[a].orderedAt - byOrder[b].orderedAt;
+    });
+
+    for (let j = 0; j < orderIds.length; j++) {
+      const entry = byOrder[orderIds[j]];
+      let allFinal = true;
+      let hasValidLine = false;
+      let total = 0;
+      for (let k = 0; k < entry.rows.length; k++) {
+        const line = entry.rows[k];
+        if (!FINAL_ORDER_STATUSES[line.status]) { allFinal = false; break; }
+        if (CANCELLED_ORDER_STATUSES[line.status]) continue; // 취소·반품된 줄은 금액에서도 제외
+        hasValidLine = true;
+        if (!line.excluded) total += line.amount;
+      }
+      if (!allFinal) return; // 이보다 먼저 들어온 주문이 아직 진행 중이면 판정을 미룬다
+      if (!hasValidLine) continue; // 전부 취소·반품된 주문은 "주문"으로 안 치고 다음 주문을 본다
+
+      // 가입 후 유효한 품목이 하나라도 있는, 가장 이른 주문을 찾았다 — 이게 "첫 주문"이다.
+      const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+      const qualifies = total >= WELCOME_BONUS_MIN_ORDER_AMOUNT;
+      flagCell.setValue(timestamp + (qualifies ? " 지급(" + orderIds[j] + ")" : " 미달(" + orderIds[j] + ")"));
+      if (qualifies) {
+        adjustRewardPoints(phone, WELCOME_BONUS_AMOUNT);
+        const historyEntry = timestamp + " [적립금] 첫 주문 추가 적립 " + WELCOME_BONUS_AMOUNT + "원 (다음 주문부터 사용 가능)";
+        const historyCell = sheet.getRange(rowNum, 22);
+        const prevHistory = String(historyCell.getValue() || "").trim();
+        historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
+      }
+      return;
+    }
+  } catch (err) {
+    // 조용히 실패 — 다른 품목이 다음에 최종 상태가 될 때 다시 평가된다
+  }
 }
 
 /**
@@ -454,6 +561,8 @@ function handleConfirmPurchase(body) {
   const prevHistory = String(historyCell.getValue() || "").trim();
   historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
 
+  tryFirstOrderBonus(sheet, targetRowNum);
+
   triggerRevalidate("orders");
 
   return jsonOutput({ ok: true, newStatus: "구매확정" });
@@ -462,7 +571,9 @@ function handleConfirmPurchase(body) {
 /**
  * 간단 트리거(설치 필요 없음) — 시트에서 발주 상태(16번째 열)를 직접 "배송완료"로 바꾸면
  * 자동으로 배송완료일시(17번째 열)를 기록한다. autoConfirmPurchases가 이 값으로 72시간
- * 경과 여부를 계산한다. 다른 열 편집이나 "배송완료" 외의 값으로 바뀔 때는 아무 것도 안 한다.
+ * 경과 여부를 계산한다. 사장님이 발주 상태를 "취소완료"/"반품완료"/"교환완료"/"구매확정"으로
+ * 직접 바꾸는 경우(토스 자동취소·고객 구매확정 등 스크립트가 바꾸는 경우는 각 함수에서 이미
+ * 직접 호출하므로 여기서는 중복 호출 안 됨)에도 첫 주문 추가 적립 판정을 다시 확인한다.
  */
 function onEdit(e) {
   const range = e.range;
@@ -483,6 +594,9 @@ function onEdit(e) {
     const value = String(sheet.getRange(row, editedCol).getValue()).trim();
     if (value === "배송완료") {
       sheet.getRange(row, 17).setValue(timestamp);
+    }
+    if (FINAL_ORDER_STATUSES[value]) {
+      tryFirstOrderBonus(sheet, row);
     }
   }
 }
@@ -529,6 +643,8 @@ function autoConfirmPurchases() {
     const historyCell = sheet.getRange(rowNum, 22);
     const prevHistory = String(historyCell.getValue() || "").trim();
     historyCell.setValue(prevHistory ? prevHistory + "\n" + historyEntry : historyEntry);
+
+    tryFirstOrderBonus(sheet, rowNum);
     changedAny = true;
   }
 

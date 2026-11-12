@@ -8,7 +8,7 @@ import TrustBadges from "../TrustBadges";
 import AddressSearchField, { combineAddress } from "../AddressSearchField";
 import TossPaymentWidget from "./TossPaymentWidget";
 import { isCardPaymentAllowed } from "@/lib/cardPayment";
-import { REWARD_USE_THRESHOLD, pointsEligibleAmount } from "@/lib/rewardPoints";
+import { REWARD_USE_THRESHOLD, REWARD_USE_MIN_ORDER_AMOUNT, pointsEligibleAmount } from "@/lib/rewardPoints";
 import { buildLineItems } from "@/lib/orderLineItems";
 import { resolveShippingFees } from "@/lib/shipping";
 import { isBenefitExcludedProduct } from "@/lib/benefitExclusions";
@@ -346,7 +346,7 @@ export default function CheckoutForm() {
           </div>
         </div>
 
-        {rewardPoints >= REWARD_USE_THRESHOLD && pointsBase > 0 && (
+        {rewardPoints >= REWARD_USE_THRESHOLD && pointsBase >= REWARD_USE_MIN_ORDER_AMOUNT && (
           <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
             <label style={{ fontSize: 13, fontWeight: 700 }}>적립금 사용 (보유: {rewardPoints.toLocaleString()}원)</label>
             <input
@@ -359,6 +359,11 @@ export default function CheckoutForm() {
               placeholder="사용할 적립금을 입력하세요"
             />
           </div>
+        )}
+        {rewardPoints >= REWARD_USE_THRESHOLD && pointsBase > 0 && pointsBase < REWARD_USE_MIN_ORDER_AMOUNT && (
+          <p style={{ fontSize: 12, color: "var(--muted)", margin: "6px 0 0" }}>
+            적립금은 {REWARD_USE_MIN_ORDER_AMOUNT.toLocaleString()}원 이상 주문부터 사용할 수 있어요.
+          </p>
         )}
 
         {usedPoints > 0 && (
@@ -396,7 +401,7 @@ export default function CheckoutForm() {
             ? "이 주문 상품은 적립금 적립·사용 대상이 아니에요."
             : hasExcludedItem
               ? "적립 제외 상품에는 적립금이 쌓이지 않고 사용할 수도 없어요. 나머지 금액은 계좌이체 구매확정 시 1%가 적립돼요."
-              : "🎁 계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (1000원 이상 적립시 다음주문에서 사용가능)"}
+              : `🎁 계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (${REWARD_USE_THRESHOLD.toLocaleString()}원 이상 적립 시 ${REWARD_USE_MIN_ORDER_AMOUNT.toLocaleString()}원 이상 주문부터 사용 가능)`}
         </p>
         <p style={{ fontSize: 12, color: "var(--muted)", margin: 0 }}>
           💡 계좌이체 시 비고에 남겨주시면 사업자지출증빙 또는 현금영수증 발급해드려요
@@ -457,7 +462,8 @@ export default function CheckoutForm() {
                 <br />
                 현재 보유 적립금: <b style={{ color: "var(--spice)" }}>{rewardPoints.toLocaleString()}원</b>
                 <br />
-                적립금이 <b style={{ color: "var(--ink)" }}>1,000원 이상</b> 쌓이면 다음 주문부터 자유롭게 사용할 수 있어요.
+                적립금이 <b style={{ color: "var(--ink)" }}>{REWARD_USE_THRESHOLD.toLocaleString()}원 이상</b> 쌓이면{" "}
+                <b style={{ color: "var(--ink)" }}>{REWARD_USE_MIN_ORDER_AMOUNT.toLocaleString()}원 이상</b> 주문부터 자유롭게 사용할 수 있어요.
                 {hasExcludedItem ? (
                   <>
                     <br />

@@ -11,6 +11,7 @@ import ZoomableImage from "./ZoomableImage";
 import StickyBuyBar from "./StickyBuyBar";
 import ProductTestimonials from "./ProductTestimonials";
 import ReviewSection from "./ReviewSection";
+import OptionList from "./OptionList";
 import { getDiscount } from "@/lib/pricing";
 import { getReviews } from "@/lib/reviews";
 import { ISLAND_SHIPPING_NOTICE, SAME_DAY_SHIPPING_NOTICE } from "@/lib/shippingNotice";
@@ -126,31 +127,7 @@ export default async function ProductPage({ params }) {
         <ProductOrderPanel product={product} />
       </div>
 
-      {product.options.length > 0 && (
-        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 6 }}>
-          {product.options.map((o, i) => {
-            const d = getDiscount(o.listPrice, o.price);
-            return (
-              <div
-                key={i}
-                className="card"
-                style={{ justifyContent: "space-between", padding: "10px 14px" }}
-              >
-                <span style={{ fontSize: 13 }}>{o.name}</span>
-                <span style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                  {d ? (
-                    <span style={{ fontSize: 11, color: "var(--muted)", textDecoration: "line-through" }}>
-                      {d.listPrice.toLocaleString()}원
-                    </span>
-                  ) : null}
-                  {d ? <span style={{ fontSize: 12, fontWeight: 800, color: "var(--spice)" }}>{d.rate}%</span> : null}
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>{o.price.toLocaleString()}원</span>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <OptionList options={product.options} />
 
       {description && (
         <div

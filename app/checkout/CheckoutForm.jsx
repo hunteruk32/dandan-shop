@@ -196,7 +196,7 @@ export default function CheckoutForm() {
     return (
       <div className="wrap">
         <div className="card" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8, marginTop: 20 }}>
-          <div style={{ fontWeight: 800, fontSize: 15 }}>주문 접수 완료 ✅</div>
+          <div style={{ fontWeight: 800, fontSize: 15 }}>주문 접수 완료</div>
           <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>
             아래 계좌로 입금해주시면 확인 후 상태가 &quot;입금확인&quot;으로 바뀝니다.
             {orderId && (
@@ -211,7 +211,7 @@ export default function CheckoutForm() {
             <div>계좌번호: <b>{bankAccount}</b></div>
             <div>예금주: <b>{bankHolder}</b></div>
             <div>입금자명: <b>{form.senderName}</b> (발송인과 동일하게 입금해주세요)</div>
-            <div>입금액: <b style={{ color: "var(--spice)" }}>{orderTotal.toLocaleString()}원</b></div>
+            <div>입금액: <b style={{ color: "var(--ink)" }}>{orderTotal.toLocaleString()}원</b></div>
           </div>
         </div>
         <Link href="/" className="btn" style={{ display: "block", textAlign: "center", marginTop: 16 }}>
@@ -240,7 +240,7 @@ export default function CheckoutForm() {
                     disabled={i.qty <= 1}
                     aria-label="수량 줄이기"
                     style={{
-                      width: 24, height: 24, borderRadius: 8, border: "1px solid var(--line)",
+                      width: 24, height: 24, borderRadius: 4, border: "1px solid var(--line)",
                       background: "#fff", fontSize: 14, fontWeight: 700, lineHeight: 1,
                       color: "var(--ink)", cursor: i.qty <= 1 ? "default" : "pointer",
                       opacity: i.qty <= 1 ? 0.4 : 1,
@@ -254,7 +254,7 @@ export default function CheckoutForm() {
                     onClick={() => cart.updateQty(i.key, i.qty + 1)}
                     aria-label="수량 늘리기"
                     style={{
-                      width: 24, height: 24, borderRadius: 8, border: "1px solid var(--line)",
+                      width: 24, height: 24, borderRadius: 4, border: "1px solid var(--line)",
                       background: "#fff", fontSize: 14, fontWeight: 700, lineHeight: 1,
                       color: "var(--ink)", cursor: "pointer",
                     }}
@@ -277,7 +277,7 @@ export default function CheckoutForm() {
               <>
                 {" "}
                 로그인하면 계좌이체 적립금 혜택을 받을 수 있어요 —{" "}
-                <Link href={`/login?next=/checkout`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+                <Link href={`/login?next=/checkout`} style={{ color: "var(--ink)", fontWeight: 700 }}>
                   로그인하기
                 </Link>
               </>
@@ -367,14 +367,14 @@ export default function CheckoutForm() {
         )}
 
         {usedPoints > 0 && (
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--accent)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--ink)" }}>
             <span>적립금 사용</span>
             <span>-{usedPoints.toLocaleString()}원</span>
           </div>
         )}
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 800, marginTop: 4 }}>
           <span>총 결제금액</span>
-          <span style={{ color: "var(--spice)" }}>{payableTotal.toLocaleString()}원</span>
+          <span style={{ color: "var(--ink)" }}>{payableTotal.toLocaleString()}원</span>
         </div>
 
         <div style={{ fontSize: 13, fontWeight: 800, marginTop: 8 }}>결제 방법</div>
@@ -396,15 +396,15 @@ export default function CheckoutForm() {
             카드결제{!cardPaymentEnabled && " (준비중)"}
           </button>
         </div>
-        <p style={{ fontSize: 12, color: hasExcludedItem ? "var(--muted)" : "var(--accent)", margin: 0 }}>
+        <p style={{ fontSize: 12, color: hasExcludedItem ? "var(--muted)" : "var(--ink)", margin: 0 }}>
           {pointsBase <= 0
             ? "이 주문 상품은 적립금 적립·사용 대상이 아니에요."
             : hasExcludedItem
               ? "적립 제외 상품에는 적립금이 쌓이지 않고 사용할 수도 없어요. 나머지 금액은 계좌이체 구매확정 시 1%가 적립돼요."
-              : `🎁 계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (${REWARD_USE_THRESHOLD.toLocaleString()}원 이상 적립 시 ${REWARD_USE_MIN_ORDER_AMOUNT.toLocaleString()}원 이상 주문부터 사용 가능)`}
+              : `계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (${REWARD_USE_THRESHOLD.toLocaleString()}원 이상 적립 시 ${REWARD_USE_MIN_ORDER_AMOUNT.toLocaleString()}원 이상 주문부터 사용 가능)`}
         </p>
         <p style={{ fontSize: 12, color: "var(--muted)", margin: 0 }}>
-          💡 계좌이체 시 비고에 남겨주시면 사업자지출증빙 또는 현금영수증 발급해드려요
+          계좌이체 시 비고에 남겨주시면 사업자지출증빙 또는 현금영수증 발급해드려요
         </p>
 
         {showCardNotice && (
@@ -456,11 +456,11 @@ export default function CheckoutForm() {
               style={{ flexDirection: "column", alignItems: "flex-start", gap: 10, maxWidth: 320, background: "#fff", padding: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ fontWeight: 800, fontSize: 15 }}>🎁 계좌이체 적립 혜택</div>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>계좌이체 적립 혜택</div>
               <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
                 계좌이체로 주문하면 구매확정 시 <b style={{ color: "var(--ink)" }}>결제금액의 1%</b>가 적립돼요.
                 <br />
-                현재 보유 적립금: <b style={{ color: "var(--spice)" }}>{rewardPoints.toLocaleString()}원</b>
+                현재 보유 적립금: <b style={{ color: "var(--ink)" }}>{rewardPoints.toLocaleString()}원</b>
                 <br />
                 적립금이 <b style={{ color: "var(--ink)" }}>{REWARD_USE_THRESHOLD.toLocaleString()}원 이상</b> 쌓이면{" "}
                 <b style={{ color: "var(--ink)" }}>{REWARD_USE_MIN_ORDER_AMOUNT.toLocaleString()}원 이상</b> 주문부터 자유롭게 사용할 수 있어요.
@@ -488,7 +488,7 @@ export default function CheckoutForm() {
         )}
 
         {state === "error" && (
-          <p style={{ color: "var(--spice)", fontSize: 13 }}>{errorMsg}</p>
+          <p style={{ color: "var(--error)", fontSize: 13 }}>{errorMsg}</p>
         )}
 
         <div style={{ marginTop: 4 }}>

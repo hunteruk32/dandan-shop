@@ -68,13 +68,13 @@ export default function SignupForm() {
         placeholder="010-0000-0000"
       />
       {phoneTaken && (
-        <p style={{ fontSize: 12, color: "var(--spice)", marginTop: 6 }}>
+        <p style={{ fontSize: 12, color: "var(--error)", marginTop: 6 }}>
           이미 가입된 전화번호예요.{" "}
-          <Link href={`/login?next=${encodeURIComponent(next)}`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+          <Link href={`/login?next=${encodeURIComponent(next)}`} style={{ color: "var(--ink)", fontWeight: 700 }}>
             로그인
           </Link>
           {" "}또는{" "}
-          <Link href="/forgot-password" style={{ color: "var(--accent)", fontWeight: 700 }}>
+          <Link href="/forgot-password" style={{ color: "var(--ink)", fontWeight: 700 }}>
             비밀번호 찾기
           </Link>
           를 이용해주세요.
@@ -93,7 +93,7 @@ export default function SignupForm() {
         onKeyDown={(e) => e.key === "Enter" && submit()}
       />
 
-      {error && <p style={{ color: "var(--spice)", fontSize: 13, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--error)", fontSize: 13, marginTop: 8 }}>{error}</p>}
 
       <button className="btn" style={{ marginTop: 14, width: "100%" }} onClick={submit} disabled={loading}>
         {loading ? "가입 중…" : "회원가입"}
@@ -101,7 +101,7 @@ export default function SignupForm() {
 
       <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14, textAlign: "center" }}>
         이미 계정이 있으신가요?{" "}
-        <Link href={`/login?next=${encodeURIComponent(next)}`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+        <Link href={`/login?next=${encodeURIComponent(next)}`} style={{ color: "var(--ink)", fontWeight: 700 }}>
           로그인
         </Link>
       </p>

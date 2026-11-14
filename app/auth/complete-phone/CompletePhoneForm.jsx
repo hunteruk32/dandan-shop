@@ -70,7 +70,7 @@ export default function CompletePhoneForm() {
         onKeyDown={(e) => e.key === "Enter" && submit()}
         placeholder="010-0000-0000"
       />
-      {errorMsg && <p style={{ color: "var(--spice)", fontSize: 13, marginTop: 8 }}>{errorMsg}</p>}
+      {errorMsg && <p style={{ color: "var(--error)", fontSize: 13, marginTop: 8 }}>{errorMsg}</p>}
       <button
         className="btn"
         style={{ marginTop: 14, width: "100%" }}

@@ -54,7 +54,7 @@ export default function TossPaymentWidget({ amount, onReady }) {
   }, [amount]);
 
   if (error) {
-    return <p style={{ color: "var(--spice)", fontSize: 13, marginTop: 8 }}>{error}</p>;
+    return <p style={{ color: "var(--error)", fontSize: 13, marginTop: 8 }}>{error}</p>;
   }
 
   return (

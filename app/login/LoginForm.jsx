@@ -65,7 +65,7 @@ export default function LoginForm() {
         onKeyDown={(e) => e.key === "Enter" && submit()}
       />
 
-      {error && <p style={{ color: "var(--spice)", fontSize: 13, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--error)", fontSize: 13, marginTop: 8 }}>{error}</p>}
 
       <button className="btn" style={{ marginTop: 14, width: "100%" }} onClick={submit} disabled={loading}>
         {loading ? "로그인 중…" : "로그인"}
@@ -97,7 +97,7 @@ export default function LoginForm() {
           border: "none",
         }}
       >
-        💬 카카오로 3초 만에 시작하기
+        카카오로 3초 만에 시작하기
       </a>
 
       <a
@@ -120,7 +120,7 @@ export default function LoginForm() {
 
       <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14, textAlign: "center" }}>
         계정이 없으신가요?{" "}
-        <Link href={`/signup?next=${encodeURIComponent(next)}`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+        <Link href={`/signup?next=${encodeURIComponent(next)}`} style={{ color: "var(--ink)", fontWeight: 700 }}>
           회원가입
         </Link>
       </p>

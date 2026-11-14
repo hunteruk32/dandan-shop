@@ -40,7 +40,7 @@ export default async function AdminReviewsPage() {
                 </div>
                 <div style={{ fontSize: 13, lineHeight: 1.6 }}>{r.content}</div>
                 {r.photoUrl && (
-                  <img src={r.photoUrl} alt="후기 사진" style={{ width: 120, height: 120, borderRadius: 10, objectFit: "cover" }} />
+                  <img src={r.photoUrl} alt="후기 사진" style={{ width: 120, height: 120, borderRadius: 4, objectFit: "cover" }} />
                 )}
                 <div style={{ fontSize: 11, color: "var(--muted)" }}>{formatDate(r.createdAt)}</div>
               </div>

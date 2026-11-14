@@ -67,7 +67,7 @@ export default function ReservationSearch({ orders, myPhone }) {
   if (!myPhone) {
     return (
       <p style={{ fontSize: 13, color: "var(--muted)" }}>
-        <Link href="/login?next=/reservations" style={{ color: "var(--accent)", fontWeight: 700 }}>
+        <Link href="/login?next=/mypage" style={{ color: "var(--ink)", fontWeight: 700 }}>
           로그인
         </Link>
         하시면 내 주문을 확인할 수 있어요.
@@ -271,7 +271,7 @@ export default function ReservationSearch({ orders, myPhone }) {
           const topBadgeText = showFinalStatus ? finalOrderStatus : order.paymentStatus;
           const topBadgeStyle = showFinalStatus
             ? ORDER_STATUS_STYLE[finalOrderStatus] || ORDER_STATUS_DEFAULT_STYLE
-            : { bg: "#E9F3EC", fg: "var(--accent)" };
+            : { bg: "#fff", fg: "var(--ink)", border: "var(--ink)" };
 
           return (
             <div key={order.id} className="card" style={{ flexDirection: "column", alignItems: "flex-start", gap: 0, padding: 0, overflow: "hidden" }}>
@@ -293,11 +293,11 @@ export default function ReservationSearch({ orders, myPhone }) {
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{order.id}</div>
                   <span style={{ fontSize: 12, color: "var(--muted)" }}>{order.orderedAt}</span>
                 </div>
-                <div style={{ fontSize: 13, color: "#5B5648" }}>
+                <div style={{ fontSize: 13, color: "var(--text)" }}>
                   {order.items.length > 1 ? `상품 ${order.items.length}건` : order.items[0]?.item}
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-                  <span className="badge" style={{ background: topBadgeStyle.bg, color: topBadgeStyle.fg }}>
+                  <span className="badge" style={{ background: topBadgeStyle.bg, color: topBadgeStyle.fg, borderColor: topBadgeStyle.border }}>
                     {topBadgeText}
                   </span>
                   <span style={{ fontSize: 13, fontWeight: 700 }}>
@@ -320,7 +320,7 @@ export default function ReservationSearch({ orders, myPhone }) {
                       {canEdit && !isEditing && (
                         <button
                           onClick={() => startEdit(order)}
-                          style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}
+                          style={{ fontSize: 12, fontWeight: 700, color: "var(--ink)", background: "none", border: "none", cursor: "pointer" }}
                         >
                           수정하기
                         </button>
@@ -341,7 +341,7 @@ export default function ReservationSearch({ orders, myPhone }) {
                           style={{ resize: "vertical" }}
                           placeholder="배송/포장 관련 요청사항 (선택)"
                         />
-                        {saveState === "error" && <p style={{ color: "var(--spice)", fontSize: 12, margin: 0 }}>{saveError}</p>}
+                        {saveState === "error" && <p style={{ color: "var(--error)", fontSize: 12, margin: 0 }}>{saveError}</p>}
                         <div style={{ display: "flex", gap: 8 }}>
                           <button
                             className="btn"
@@ -378,13 +378,13 @@ export default function ReservationSearch({ orders, myPhone }) {
                         const isConfirming = confirmingKey === key;
                         const showReviewLink = ["배송완료", "구매확정"].includes(it.orderStatus) && it.productId;
                         return (
-                          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", background: "var(--line)", borderRadius: 10 }}>
+                          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", background: "var(--line)", borderRadius: 4 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
                               <span>{it.item}</span>
                               <span style={{ fontWeight: 700 }}>{it.totalAmount.toLocaleString()}원</span>
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                              <span className="badge" style={{ background: s.bg, color: s.fg }}>{it.orderStatus}</span>
+                              <span className="badge" style={{ background: s.bg, color: s.fg, borderColor: s.border }}>{it.orderStatus}</span>
                               {it.trackingNumber && (
                                 <span style={{ fontSize: 12, color: "var(--muted)" }}>{it.courier} {it.trackingNumber}</span>
                               )}
@@ -393,9 +393,18 @@ export default function ReservationSearch({ orders, myPhone }) {
                                   <Link
                                     href={`/product/${it.productId}?review=1#reviews`}
                                     className="badge"
-                                    style={{ background: "var(--gold)", color: "var(--ink)", fontWeight: 800 }}
+                                    style={{
+                                      background: "var(--ink)",
+                                      color: "#fff",
+                                      fontWeight: 800,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      minHeight: 44,
+                                      padding: "0 16px",
+                                    }}
                                   >
-                                    ✍️ 리뷰 쓰기
+                                    리뷰 쓰기
                                   </Link>
                                 )}
                                 {canConfirmPurchase && (
@@ -404,12 +413,17 @@ export default function ReservationSearch({ orders, myPhone }) {
                                     className="badge"
                                     disabled={isConfirming}
                                     style={{
-                                      border: "1px solid var(--accent)",
-                                      background: "var(--accent)",
+                                      border: "1px solid var(--ink)",
+                                      background: "var(--ink)",
                                       color: "#fff",
                                       cursor: isConfirming ? "default" : "pointer",
                                       fontWeight: 700,
                                       opacity: isConfirming ? 0.6 : 1,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      minHeight: 44,
+                                      padding: "0 16px",
                                     }}
                                   >
                                     {isConfirming ? "처리 중…" : "구매확정요청"}
@@ -420,11 +434,16 @@ export default function ReservationSearch({ orders, myPhone }) {
                                     onClick={() => openRequestForm(order, i)}
                                     className="badge"
                                     style={{
-                                      border: "1px solid var(--spice)",
+                                      border: "1px solid var(--ink)",
                                       background: "#fff",
-                                      color: "var(--spice)",
+                                      color: "var(--ink)",
                                       cursor: "pointer",
                                       fontWeight: 700,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      minHeight: 44,
+                                      padding: "0 16px",
                                     }}
                                   >
                                     {canCancel ? "취소 요청" : "반품 요청"}
@@ -444,7 +463,7 @@ export default function ReservationSearch({ orders, myPhone }) {
                                   style={{ resize: "vertical", fontSize: 13 }}
                                 />
                                 {requestState === "error" && (
-                                  <p style={{ color: "var(--spice)", fontSize: 12, margin: 0 }}>{requestError}</p>
+                                  <p style={{ color: "var(--error)", fontSize: 12, margin: 0 }}>{requestError}</p>
                                 )}
                                 <div style={{ display: "flex", gap: 6 }}>
                                   <button
@@ -457,7 +476,7 @@ export default function ReservationSearch({ orders, myPhone }) {
                                   </button>
                                   <button
                                     className="btn"
-                                    style={{ flex: 1, background: "var(--spice)", padding: "8px 10px", fontSize: 12 }}
+                                    style={{ flex: 1, background: "var(--ink)", padding: "8px 10px", fontSize: 12 }}
                                     onClick={() => submitStatusRequest(order, i, canCancel ? "cancel" : "return")}
                                     disabled={requestState === "saving"}
                                   >

@@ -40,7 +40,7 @@ function OptionRow({ o }) {
             {d.listPrice.toLocaleString()}원
           </span>
         ) : null}
-        {d ? <span style={{ fontSize: 12, fontWeight: 800, color: "var(--spice)" }}>{d.rate}%</span> : null}
+        {d ? <span style={{ fontSize: 12, fontWeight: 800, color: "var(--ink)" }}>{d.rate}%</span> : null}
         <span style={{ fontWeight: 700, fontSize: 14 }}>{o.price.toLocaleString()}원</span>
       </span>
     </div>
@@ -56,7 +56,7 @@ function Chip({ children, color }) {
         fontSize: 12,
         fontWeight: 800,
         padding: "2px 9px",
-        borderRadius: 999,
+        borderRadius: 4,
         background: `${color}18`,
         color,
       }}
@@ -106,9 +106,9 @@ export default function OptionList({ options }) {
 
   const boxStyle = (color) => ({
     border: `1.5px solid ${color}55`,
-    borderRadius: 14,
+    borderRadius: 4,
     padding: 12,
-    background: "#fffdf9",
+    background: "var(--bg)",
   });
 
   return (
@@ -125,7 +125,7 @@ export default function OptionList({ options }) {
             {g.sizes.map((s) => (
               <div
                 key={s.size}
-                style={{ border: "1px dashed var(--line)", borderRadius: 12, padding: 10, background: "#fbf9f4" }}
+                style={{ border: "1px dashed var(--line)", borderRadius: 4, padding: 10, background: "var(--bg-soft)" }}
               >
                 <div style={{ fontSize: 13, fontWeight: 800, margin: "0 4px 8px" }}>
                   <span style={{ color: SIZE_COLOR[s.size] }}>{s.size}</span>

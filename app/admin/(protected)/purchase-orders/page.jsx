@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 function SupplierGroup({ supplier, items }) {
   const downloadable = isSupportedSupplier(supplier);
   return (
-    <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden", marginBottom: 20 }}>
+    <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, overflow: "hidden", marginBottom: 20 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: "1px solid var(--line)" }}>
         <div style={{ fontWeight: 800, fontSize: 15 }}>
           {supplier} <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: 13 }}>· {items.length}건</span>

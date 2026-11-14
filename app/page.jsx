@@ -10,7 +10,7 @@ import CardPaymentNotice from "./CardPaymentNotice";
 import RewardPointsNotice from "./RewardPointsNotice";
 import FirstOrderBonusNotice from "./FirstOrderBonusNotice";
 import SiteHeader from "./SiteHeader";
-import OpenChatBanner from "./OpenChatBanner";
+import OpenChatFab from "./OpenChatFab";
 import CategoryQuickGrid from "./CategoryQuickGrid";
 import BestProducts from "./BestProducts";
 import MdPicks from "./MdPicks";
@@ -100,7 +100,7 @@ export default async function HomePage() {
               {/* 모바일(390폭)에선 첫 화면에 상품이 바로 보이도록 짧은 태그라인 하나만 보여준다 */}
               <div className="hero-content-mobile">
                 <p className="hero-tagline">산지에서 식탁까지, 중간 유통 없이 하루 만에</p>
-                <a href="#products" className="btn" style={{ background: "var(--gold)", color: "var(--ink)" }}>
+                <a href="#products" className="btn" style={{ background: "var(--ink)", color: "#fff" }}>
                   오늘의 산지 물건 보기
                 </a>
               </div>
@@ -115,11 +115,11 @@ export default async function HomePage() {
                   엄선해 도매가에 가까운 가격으로 직접 보내드립니다.
                 </p>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <a href="#products" className="btn" style={{ background: "var(--gold)", color: "var(--ink)" }}>
+                  <a href="#products" className="btn" style={{ background: "var(--ink)", color: "#fff" }}>
                     오늘의 산지 물건 보기
                   </a>
-                  <Link href="/reservations" className="btn" style={{ background: "transparent", border: "1.5px solid #55604F", color: "var(--bg)" }}>
-                    내 주문 확인하기
+                  <Link href="/mypage" className="btn" style={{ background: "transparent", border: "1.5px solid rgba(255,255,255,0.45)", color: "var(--bg)" }}>
+                    마이페이지
                   </Link>
                 </div>
               </div>
@@ -140,10 +140,6 @@ export default async function HomePage() {
         ) : null}
 
         <BestProducts products={products} />
-
-        <div style={{ margin: "24px 0" }}>
-          <OpenChatBanner />
-        </div>
 
         <div style={{ marginBottom: 20 }}>
           <RealtimeReviewTicker reviews={recentReviews} />
@@ -168,6 +164,8 @@ export default async function HomePage() {
           <StatsBanner productCount={products.length} categoryCount={presentCategories.length} />
         </div>
       </div>
+
+      <OpenChatFab />
     </div>
   );
 }

@@ -41,18 +41,18 @@ export default function CardPaymentNotice() {
         onClick={(e) => e.stopPropagation()}
         style={{
           background: "var(--bg)",
-          borderRadius: 16,
+          borderRadius: 4,
           maxWidth: 340,
           width: "100%",
           padding: "24px 22px 18px",
           boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
         }}
       >
-        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)", letterSpacing: 2, marginBottom: 6 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink)", letterSpacing: 2, marginBottom: 6 }}>
           NEW
         </div>
         <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 12px", color: "var(--ink)" }}>
-          카드결제 오픈했어요 💳
+          카드결제 오픈했어요
         </h2>
         <div style={{ fontSize: 14, lineHeight: 1.8, color: "var(--ink)", marginBottom: 18 }}>
           <p style={{ margin: 0 }}>

@@ -3,7 +3,7 @@ export default function robots() {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/api", "/checkout", "/cart", "/reservations", "/login", "/signup", "/auth"],
+      disallow: ["/admin", "/api", "/checkout", "/cart", "/reservations", "/mypage", "/login", "/signup", "/auth"],
     },
     sitemap: "https://www.dandan-shop.co.kr/sitemap.xml",
   };

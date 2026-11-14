@@ -17,6 +17,9 @@ export default async function SiteHeader({ presentCategories }) {
 
   return (
     <div className="site-header">
+      <div className="site-top-banner">
+        오전 7시 이전 주문 시 당일 산지 발송 · 중간 유통 마진 0원
+      </div>
       <div className="site-header-bar">
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className="seal" style={{ width: 38, height: 38 }}>
@@ -33,8 +36,8 @@ export default async function SiteHeader({ presentCategories }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <HeaderSearch />
         </div>
-        <Link href="/reservations" className="mobile-only" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", flexShrink: 0 }}>
-          주문확인
+        <Link href="/mypage" className="mobile-only" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", flexShrink: 0 }}>
+          마이페이지
         </Link>
       </div>
       <nav className="site-nav">
@@ -42,7 +45,7 @@ export default async function SiteHeader({ presentCategories }) {
         {categories.map((c) => (
           <Link key={c} href={`/?category=${encodeURIComponent(c)}#products`}>{c}</Link>
         ))}
-        <Link href="/reservations" style={{ marginLeft: "auto", color: "var(--muted)" }}>내 주문 확인</Link>
+        <Link href="/mypage" style={{ marginLeft: "auto", color: "var(--muted)" }}>마이페이지</Link>
       </nav>
     </div>
   );

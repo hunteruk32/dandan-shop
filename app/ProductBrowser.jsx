@@ -102,14 +102,10 @@ export default function ProductBrowser({ products }) {
         {categories.map((c) => (
           <button
             key={c}
-            className={[
-              "tab",
-              c === "선물세트" ? "tab-gift" : "",
-              c === activeCategory ? "active" : "",
-            ].filter(Boolean).join(" ")}
+            className={`tab ${c === activeCategory ? "active" : ""}`}
             onClick={() => setActiveCategory(c)}
           >
-            {c === "선물세트" ? "🎁 " : ""}{c}
+            {c}
           </button>
         ))}
       </div>

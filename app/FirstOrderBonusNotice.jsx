@@ -58,7 +58,7 @@ export default function FirstOrderBonusNotice() {
         style={{
           position: "relative",
           background: "var(--bg)",
-          borderRadius: 20,
+          borderRadius: 4,
           maxWidth: 380,
           width: "100%",
           overflow: "hidden",
@@ -89,7 +89,7 @@ export default function FirstOrderBonusNotice() {
 
         <div
           style={{
-            background: "linear-gradient(135deg, var(--ink) 0%, #3a4a3e 100%)",
+            background: "linear-gradient(135deg, var(--ink) 0%, #223756 100%)",
             padding: "28px 26px 22px",
             color: "#fff",
             textAlign: "center",
@@ -135,7 +135,7 @@ export default function FirstOrderBonusNotice() {
 function BonusLine({ children, last }) {
   return (
     <li style={{ display: "flex", gap: 8, marginBottom: last ? 0 : 8 }}>
-      <span style={{ color: "var(--accent)", fontWeight: 800, flexShrink: 0 }}>·</span>
+      <span style={{ color: "var(--ink)", fontWeight: 800, flexShrink: 0 }}>·</span>
       <span>{children}</span>
     </li>
   );

@@ -31,7 +31,7 @@ export default function ZoomableImage({ src, alt, className, style }) {
             cursor: "zoom-out",
           }}
         >
-          <img src={src} alt={alt} style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: 8 }} />
+          <img src={src} alt={alt} style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: 4 }} />
         </div>
       )}
     </>

@@ -5,7 +5,7 @@ const badgeStyle = {
   padding: "5px 10px",
   borderRadius: 4,
   border: "1px solid var(--line)",
-  background: "#f6f8f6",
+  background: "var(--bg-soft)",
   fontSize: 11.5,
   fontWeight: 700,
   color: "var(--ink)",

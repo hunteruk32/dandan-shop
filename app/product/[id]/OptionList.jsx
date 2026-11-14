@@ -108,7 +108,7 @@ export default function OptionList({ options }) {
     border: `1.5px solid ${color}55`,
     borderRadius: 4,
     padding: 12,
-    background: "#fffdf9",
+    background: "var(--bg)",
   });
 
   return (
@@ -125,7 +125,7 @@ export default function OptionList({ options }) {
             {g.sizes.map((s) => (
               <div
                 key={s.size}
-                style={{ border: "1px dashed var(--line)", borderRadius: 4, padding: 10, background: "#fbf9f4" }}
+                style={{ border: "1px dashed var(--line)", borderRadius: 4, padding: 10, background: "var(--bg-soft)" }}
               >
                 <div style={{ fontSize: 13, fontWeight: 800, margin: "0 4px 8px" }}>
                   <span style={{ color: SIZE_COLOR[s.size] }}>{s.size}</span>

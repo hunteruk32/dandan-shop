@@ -14,7 +14,7 @@ export default function ProductTestimonials({ product }) {
             flexDirection: "column",
             alignItems: "flex-start",
             gap: 4,
-            background: "#F6F8F6",
+            background: "var(--bg-soft)",
           }}
         >
           <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--ink)" }}>“{t.text}”</div>

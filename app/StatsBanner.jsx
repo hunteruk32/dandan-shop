@@ -5,7 +5,7 @@ export default function StatsBanner({ productCount, categoryCount }) {
         <div className="serif" style={{ fontSize: 17, fontWeight: 800, color: "var(--ink)", marginBottom: 6 }}>
           단골이 늘어나는 이유, 딱 하나입니다
         </div>
-        <div style={{ fontSize: 13, color: "#6B6250" }}>"가격은 도매, 물건은 산지 그대로" — 중간 유통 없이 직접 보내드려요.</div>
+        <div style={{ fontSize: 13, color: "var(--muted)" }}>"가격은 도매, 물건은 산지 그대로" — 중간 유통 없이 직접 보내드려요.</div>
       </div>
       <div className="stats-banner-numbers">
         <div className="stat-item">

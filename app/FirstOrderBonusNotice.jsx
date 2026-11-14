@@ -89,7 +89,7 @@ export default function FirstOrderBonusNotice() {
 
         <div
           style={{
-            background: "linear-gradient(135deg, var(--ink) 0%, #2E2E2E 100%)",
+            background: "linear-gradient(135deg, var(--ink) 0%, #223756 100%)",
             padding: "28px 26px 22px",
             color: "#fff",
             textAlign: "center",

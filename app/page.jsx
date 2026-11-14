@@ -118,7 +118,7 @@ export default async function HomePage() {
                   <a href="#products" className="btn" style={{ background: "var(--ink)", color: "#fff" }}>
                     오늘의 산지 물건 보기
                   </a>
-                  <Link href="/mypage" className="btn" style={{ background: "transparent", border: "1.5px solid #5A5A5A", color: "var(--bg)" }}>
+                  <Link href="/mypage" className="btn" style={{ background: "transparent", border: "1.5px solid rgba(255,255,255,0.45)", color: "var(--bg)" }}>
                     마이페이지
                   </Link>
                 </div>

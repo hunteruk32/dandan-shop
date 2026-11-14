@@ -31,6 +31,7 @@ export default function ReviewHideToggle({ id, hidden }) {
         cursor: "pointer",
         background: hidden ? "#EFEDE7" : "#E9F3EC",
         color: hidden ? "#8A8172" : "#2F6F4E",
+        padding: "10px 14px",
       }}
     >
       {hidden ? "숨김 중 · 다시 보이기" : "노출 중 · 숨기기"}

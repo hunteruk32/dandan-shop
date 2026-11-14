@@ -63,7 +63,7 @@ export default function AddressSearchField({ base, detail, onBaseChange, onDetai
         <button
           type="button"
           className="btn"
-          style={{ flexShrink: 0, background: "#fff", color: "var(--accent)", border: "1px solid var(--accent)" }}
+          style={{ flexShrink: 0, background: "#fff", color: "var(--ink)", border: "1px solid var(--ink)" }}
           onClick={() => setOpen(true)}
           disabled={disabled}
         >
@@ -96,7 +96,7 @@ export default function AddressSearchField({ base, detail, onBaseChange, onDetai
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "#fff",
-              borderRadius: 16,
+              borderRadius: 4,
               width: "100%",
               maxWidth: 420,
               padding: 12,

@@ -6,7 +6,7 @@ import Link from "next/link";
 
 function Stars({ value, size = 14 }) {
   return (
-    <span style={{ display: "inline-flex", gap: 1, color: "var(--gold)" }}>
+    <span style={{ display: "inline-flex", gap: 1, color: "var(--star)" }}>
       {[1, 2, 3, 4, 5].map((n) => (
         <svg key={n} width={size} height={size} viewBox="0 0 24 24" fill={n <= value ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
           <path d="M12 3.5 14.7 9l6.1.9-4.4 4.3 1 6.1L12 17.3 6.6 20.3l1-6.1L3.2 9.9 9.3 9Z" strokeLinejoin="round" />
@@ -25,7 +25,7 @@ function StarPicker({ value, onChange }) {
           type="button"
           onClick={() => onChange(n)}
           aria-label={`${n}점`}
-          style={{ background: "none", border: "none", padding: 2, cursor: "pointer", color: n <= value ? "var(--gold)" : "var(--line)" }}
+          style={{ background: "none", border: "none", padding: 2, cursor: "pointer", color: n <= value ? "var(--star)" : "var(--line)" }}
         >
           <svg width="26" height="26" viewBox="0 0 24 24" fill={n <= value ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
             <path d="M12 3.5 14.7 9l6.1.9-4.4 4.3 1 6.1L12 17.3 6.6 20.3l1-6.1L3.2 9.9 9.3 9Z" strokeLinejoin="round" />
@@ -143,7 +143,7 @@ export default function ReviewSection({ productId, initial }) {
         <button
           type="button"
           className="btn"
-          style={{ fontSize: 12, padding: "7px 12px", background: "#fff", color: "var(--accent)", border: "1px solid var(--accent)" }}
+          style={{ fontSize: 12, padding: "7px 12px", background: "#fff", color: "var(--ink)", border: "1px solid var(--ink)" }}
           onClick={() => setShowForm((v) => !v)}
         >
           {showForm ? "취소" : "후기 작성"}
@@ -166,9 +166,9 @@ export default function ReviewSection({ productId, initial }) {
             accept="image/jpeg,image/png,image/webp,image/gif"
             onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
           />
-          {error && <p style={{ color: "var(--spice)", fontSize: 12, margin: 0 }}>{error}</p>}
+          {error && <p style={{ color: "var(--error)", fontSize: 12, margin: 0 }}>{error}</p>}
           {error.includes("로그인") && (
-            <Link href={`/login?next=/product/${productId}`} style={{ fontSize: 12, color: "var(--accent)", fontWeight: 700 }}>
+            <Link href={`/login?next=/product/${productId}`} style={{ fontSize: 12, color: "var(--ink)", fontWeight: 700 }}>
               로그인하러 가기 →
             </Link>
           )}
@@ -193,7 +193,7 @@ export default function ReviewSection({ productId, initial }) {
               </div>
               <div style={{ fontSize: 13, lineHeight: 1.6 }}>{r.content}</div>
               {r.photoUrl && (
-                <img src={r.photoUrl} alt="후기 사진" style={{ width: "100%", maxWidth: 240, borderRadius: 10, objectFit: "cover" }} />
+                <img src={r.photoUrl} alt="후기 사진" style={{ width: "100%", maxWidth: 240, borderRadius: 4, objectFit: "cover" }} />
               )}
             </div>
           ))}

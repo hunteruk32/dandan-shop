@@ -21,7 +21,7 @@ export default function CartLink({ dark = true }) {
         flexShrink: 0,
       }}
     >
-      🛒 장바구니{count > 0 ? ` (${count})` : ""}
+      장바구니{count > 0 ? ` (${count})` : ""}
     </Link>
   );
 }

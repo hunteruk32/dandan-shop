@@ -17,6 +17,9 @@ export default async function SiteHeader({ presentCategories }) {
 
   return (
     <div className="site-header">
+      <div className="site-top-banner">
+        오전 7시 이전 주문 시 당일 산지 발송 · 중간 유통 마진 0원
+      </div>
       <div className="site-header-bar">
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className="seal" style={{ width: 38, height: 38 }}>

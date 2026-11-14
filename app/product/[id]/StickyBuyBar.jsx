@@ -27,6 +27,9 @@ export default function StickyBuyBar({ productName, price, hasOptions, listPrice
     };
   }, []);
 
+  // 이 바는 옵션·수량 상태를 따로 갖지 않는다 — 실제 담기/구매 로직은 상품 상세의
+  // 주문 패널(ProductOrderPanel)에만 있고, 여기 두 버튼은 전부 그 패널로 스크롤시켜서
+  // 실제 선택을 거기서 하게 한다(장바구니/주문 로직을 두 곳에 중복시키지 않기 위함).
   const scrollToOrder = () => {
     document.getElementById("quick-order")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -46,11 +49,11 @@ export default function StickyBuyBar({ productName, price, hasOptions, listPrice
         boxShadow: "0 -6px 20px rgba(0,0,0,0.08)",
         padding: "10px 16px",
         display: "flex",
-        alignItems: "center",
-        gap: 12,
+        flexDirection: "column",
+        gap: 8,
       }}
     >
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div
           style={{
             fontSize: 12,
@@ -58,20 +61,31 @@ export default function StickyBuyBar({ productName, price, hasOptions, listPrice
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
+            flex: 1,
+            minWidth: 0,
           }}
         >
           {productName}
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
-          {discount ? <span style={{ fontWeight: 800, fontSize: 13, color: "var(--spice)" }}>{discount.rate}%</span> : null}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+          {discount ? <span style={{ fontWeight: 800, fontSize: 13, color: "var(--ink)" }}>{discount.rate}%</span> : null}
           <div className="price" style={{ marginTop: 0 }}>
             {price.toLocaleString()}원{hasOptions ? "부터" : ""}
           </div>
         </div>
       </div>
-      <button className="btn" style={{ flexShrink: 0 }} onClick={scrollToOrder}>
-        주문하기
-      </button>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          className="btn"
+          style={{ flex: 1, minHeight: 44, background: "#fff", color: "var(--ink)", border: "1px solid var(--ink)" }}
+          onClick={scrollToOrder}
+        >
+          장바구니
+        </button>
+        <button className="btn" style={{ flex: 2, minHeight: 44 }} onClick={scrollToOrder}>
+          바로 구매하기
+        </button>
+      </div>
     </div>
   );
 }

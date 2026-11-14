@@ -23,7 +23,7 @@ export default function TrustStrip() {
       <div className="trust-strip-inner">
         {ITEMS.map((it) => (
           <div key={it.label} className="trust-item">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2">
               {it.icon}
             </svg>
             {it.label}

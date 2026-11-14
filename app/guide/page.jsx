@@ -55,7 +55,7 @@ export default function GuidePage() {
         </Section>
 
         <Section title="문의">
-          <p>그 밖에 궁금한 점은 <a href="https://open.kakao.com/o/pHvM5Eui" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 700 }}>카카오톡</a> 또는 전화(070-8058-8287, 평일 10:00-17:00)로 편하게 문의해주세요.</p>
+          <p>그 밖에 궁금한 점은 <a href="https://open.kakao.com/o/pHvM5Eui" target="_blank" rel="noopener noreferrer" style={{ color: "var(--ink)", fontWeight: 700 }}>카카오톡</a> 또는 전화(070-8058-8287, 평일 10:00-17:00)로 편하게 문의해주세요.</p>
         </Section>
       </div>
     </div>

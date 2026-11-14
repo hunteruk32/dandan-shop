@@ -50,31 +50,31 @@ export default function RewardPointsNotice() {
         onClick={(e) => e.stopPropagation()}
         style={{
           background: "var(--bg)",
-          borderRadius: 16,
+          borderRadius: 4,
           maxWidth: 340,
           width: "100%",
           padding: "24px 22px 18px",
           boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
         }}
       >
-        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--accent)", letterSpacing: 2, marginBottom: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--ink)", letterSpacing: 2, marginBottom: 6 }}>
           적립 혜택
         </div>
         <h2 style={{ fontSize: 19, fontWeight: 800, margin: "0 0 14px", color: "var(--ink)", lineHeight: 1.4 }}>
-          계좌이체 주문, 1% 적립돼요 🎁
+          계좌이체 주문, 1% 적립돼요
         </h2>
 
         <div
           style={{
             background: "rgba(0,0,0,0.035)",
-            borderRadius: 12,
+            borderRadius: 4,
             padding: "14px 16px",
             marginBottom: 14,
             textAlign: "center",
           }}
         >
           <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>현재 보유 적립금</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "var(--spice)", letterSpacing: -0.5 }}>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "var(--ink)", letterSpacing: -0.5 }}>
             {rewardPoints.toLocaleString()}원
           </div>
         </div>

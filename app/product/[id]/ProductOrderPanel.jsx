@@ -101,13 +101,13 @@ export default function ProductOrderPanel({ product }) {
               {(discount.listPrice * Number(qty || 1) + shippingFee).toLocaleString()}원
             </span>
           ) : null}
-          {discount ? <span style={{ fontSize: 13, fontWeight: 800, color: "var(--spice)" }}>{discount.rate}%</span> : null}
-          <span style={{ color: "var(--spice)" }}>{(unitPrice * Number(qty || 1) + shippingFee).toLocaleString()}원</span>
+          {discount ? <span style={{ fontSize: 13, fontWeight: 800, color: "var(--ink)" }}>{discount.rate}%</span> : null}
+          <span style={{ color: "var(--ink)" }}>{(unitPrice * Number(qty || 1) + shippingFee).toLocaleString()}원</span>
         </span>
       </div>
 
       {!purchasable && (
-        <p style={{ fontSize: 13, color: "var(--spice)", fontWeight: 700, margin: 0 }}>
+        <p style={{ fontSize: 13, color: "var(--ink)", fontWeight: 700, margin: 0 }}>
           {product.status === "품절" ? "일시 품절된 상품이에요." : `현재 ${product.status} 상품이라 주문할 수 없어요.`}
         </p>
       )}
@@ -118,15 +118,15 @@ export default function ProductOrderPanel({ product }) {
           style={{
             flex: 1,
             background: "#fff",
-            color: "var(--accent)",
-            border: "1px solid var(--accent)",
+            color: "var(--ink)",
+            border: "1px solid var(--ink)",
             opacity: purchasable ? 1 : 0.5,
             cursor: purchasable ? "pointer" : "not-allowed",
           }}
           onClick={addToCart}
           disabled={!purchasable}
         >
-          {added ? "담았어요 ✅" : "장바구니에 담기"}
+          {added ? "담았어요" : "장바구니에 담기"}
         </button>
         <button
           className="btn"

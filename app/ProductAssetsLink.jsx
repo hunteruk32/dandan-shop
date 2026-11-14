@@ -23,9 +23,9 @@ export default function ProductAssetsLink() {
       target="_blank"
       rel="noopener noreferrer"
       className="btn"
-      style={{ display: "inline-block", background: "#fff", color: "var(--accent)", border: "1px solid var(--accent)" }}
+      style={{ display: "inline-block", background: "#fff", color: "var(--ink)", border: "1px solid var(--ink)" }}
     >
-      🖼️ 상품 이미지 및 상세페이지 바로보기
+      상품 이미지 및 상세페이지 바로보기
     </a>
   );
 }

@@ -43,7 +43,7 @@ function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           autoFocus
         />
-        {error && <p style={{ color: "var(--spice)", fontSize: 13, margin: 0 }}>{error}</p>}
+        {error && <p style={{ color: "var(--error)", fontSize: 13, margin: 0 }}>{error}</p>}
         <button className="btn" type="submit" disabled={loading || !password}>
           {loading ? "확인 중…" : "로그인"}
         </button>

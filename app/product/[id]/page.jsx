@@ -9,9 +9,12 @@ import SiteHeader from "../../SiteHeader";
 import ProductOrderPanel from "./ProductOrderPanel";
 import ZoomableImage from "./ZoomableImage";
 import StickyBuyBar from "./StickyBuyBar";
+import OpenChatFab from "../../OpenChatFab";
 import ProductTestimonials from "./ProductTestimonials";
 import ReviewSection from "./ReviewSection";
 import OptionList from "./OptionList";
+import ShippingCutoffTimer from "../../ShippingCutoffTimer";
+import TrustGuaranteeBlock from "../../TrustGuaranteeBlock";
 import { getDiscount } from "@/lib/pricing";
 import { getReviews } from "@/lib/reviews";
 import { ISLAND_SHIPPING_NOTICE, SAME_DAY_SHIPPING_NOTICE } from "@/lib/shippingNotice";
@@ -112,14 +115,16 @@ export default async function ProductPage({ params }) {
             </div>
           ) : null}
           <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-            {discount ? <span style={{ fontWeight: 800, fontSize: 16, color: "var(--spice)" }}>{discount.rate}%</span> : null}
+            {discount ? <span style={{ fontWeight: 800, fontSize: 16, color: "var(--ink)" }}>{discount.rate}%</span> : null}
             <div className="price" style={{ fontSize: 18 }}>
               {product.price.toLocaleString()}원{product.options.length > 1 ? "부터" : ""}
             </div>
           </div>
         </div>
-        <span className="badge" style={{ background: s.bg, color: s.fg }}>{product.status}</span>
+        <span className="badge" style={{ borderColor: s.border, color: s.fg }}>{product.status}</span>
       </div>
+
+      <ShippingCutoffTimer />
 
       <ProductTestimonials product={product} />
 
@@ -128,6 +133,8 @@ export default async function ProductPage({ params }) {
       </div>
 
       <OptionList options={product.options} />
+
+      <TrustGuaranteeBlock />
 
       {description && (
         <div
@@ -140,7 +147,7 @@ export default async function ProductPage({ params }) {
         <ZoomableImage
           src={product.detailImage}
           alt={`${product.name} 상세설명`}
-          style={{ width: "100%", display: "block", marginTop: 16, borderRadius: 12 }}
+          style={{ width: "100%", display: "block", marginTop: 16, borderRadius: 4 }}
         />
       )}
 
@@ -150,7 +157,7 @@ export default async function ProductPage({ params }) {
 
       <div
         id="shipping-policy"
-        style={{ marginTop: 20, padding: "14px 16px", border: "1px solid var(--line)", borderRadius: 12, background: "#fff", fontSize: 13, lineHeight: 1.7 }}
+        style={{ marginTop: 20, padding: "14px 16px", border: "1px solid var(--line)", borderRadius: 4, background: "#fff", fontSize: 13, lineHeight: 1.7 }}
       >
         <div style={{ fontWeight: 800, marginBottom: 4 }}>배송 안내</div>
         <div style={{ color: "var(--muted)" }}>
@@ -162,33 +169,12 @@ export default async function ProductPage({ params }) {
         <div style={{ fontWeight: 800, margin: "10px 0 4px" }}>교환·환불 안내</div>
         <div style={{ color: "var(--muted)" }}>
           신선식품 특성상 단순 변심에 의한 교환·반품은 제한될 수 있어요. 상품 하자·오배송·파손이 있으면 수령 후 24시간 이내에 사진과 함께 연락주시면 재발송 또는 환불해드립니다. 자세한 내용은{" "}
-          <Link href="/guide" style={{ color: "var(--accent)", fontWeight: 700 }}>이용안내</Link>를 확인해주세요.
+          <Link href="/guide" style={{ color: "var(--ink)", fontWeight: 700 }}>이용안내</Link>를 확인해주세요.
         </div>
       </div>
 
       <div id="bottom-order">
         <ProductOrderPanel product={product} />
-
-        <a
-          href="https://open.kakao.com/o/pHvM5Eui"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-            marginTop: 12,
-            padding: "12px 18px",
-            borderRadius: 10,
-            background: "#FEE500",
-            color: "#191600",
-            fontWeight: 700,
-            fontSize: 14,
-          }}
-        >
-          💬 카카오톡으로 먼저 문의하기
-        </a>
       </div>
 
       <StickyBuyBar
@@ -197,6 +183,7 @@ export default async function ProductPage({ params }) {
         listPrice={product.listPrice}
         hasOptions={product.options.length > 1}
       />
+      <OpenChatFab liftBottom={92} />
       </div>
     </div>
   );

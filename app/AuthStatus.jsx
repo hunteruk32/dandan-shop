@@ -39,7 +39,7 @@ export default function AuthStatus({ dark = true }) {
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: dark ? color : "var(--accent)" }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: dark ? color : "var(--ink)" }}>
         적립금 {rewardPoints.toLocaleString()}원
       </span>
       <button

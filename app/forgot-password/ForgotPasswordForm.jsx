@@ -67,7 +67,7 @@ export default function ForgotPasswordForm() {
       <div className="wrap">
         <PageTitleRow title="비밀번호 찾기" />
         <div className="card" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
-          <div style={{ fontWeight: 800, fontSize: 15 }}>비밀번호가 변경됐어요 ✅</div>
+          <div style={{ fontWeight: 800, fontSize: 15 }}>비밀번호가 변경됐어요</div>
           <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>
             새 비밀번호로 다시 로그인해주세요.
           </p>
@@ -149,10 +149,10 @@ export default function ForgotPasswordForm() {
         </>
       )}
 
-      {error && <p style={{ color: "var(--spice)", fontSize: 13, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "var(--error)", fontSize: 13, marginTop: 8 }}>{error}</p>}
 
       <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14, textAlign: "center" }}>
-        <Link href={`/login?next=${encodeURIComponent(next)}`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+        <Link href={`/login?next=${encodeURIComponent(next)}`} style={{ color: "var(--ink)", fontWeight: 700 }}>
           로그인으로 돌아가기
         </Link>
       </p>

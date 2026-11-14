@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 function KpiCard({ label, value, sub }) {
   return (
-    <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: "16px 18px", flex: "1 1 140px" }}>
+    <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, padding: "16px 18px", flex: "1 1 140px" }}>
       <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 800 }}>{value}</div>
       {sub ? <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{sub}</div> : null}
@@ -27,7 +27,7 @@ function BarChart({ data, labelKey, valueKey, height = 120 }) {
             style={{
               width: 16,
               height: Math.max(2, (d[valueKey] / max) * (height - 30)),
-              background: "var(--accent)",
+              background: "var(--ink)",
               borderRadius: 3,
             }}
           />
@@ -56,7 +56,7 @@ function FunnelChart({ data }) {
               </span>
             </div>
             <div style={{ background: "#F6F4EE", borderRadius: 6, height: 20, overflow: "hidden" }}>
-              <div style={{ width: `${widthPct}%`, height: "100%", background: "var(--accent)", borderRadius: 6 }} />
+              <div style={{ width: `${widthPct}%`, height: "100%", background: "var(--ink)", borderRadius: 6 }} />
             </div>
           </div>
         );
@@ -129,8 +129,8 @@ export default async function AdminDashboardPage({ searchParams }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 className="serif" style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>단단상회 분석 대시보드</h1>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Link href="/admin/purchase-orders" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>오늘의 발주</Link>
-          <Link href="/admin/reviews" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>리뷰 관리</Link>
+          <Link href="/admin/purchase-orders" style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>오늘의 발주</Link>
+          <Link href="/admin/reviews" style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>리뷰 관리</Link>
           <AdminLogoutButton />
         </div>
       </div>
@@ -176,7 +176,7 @@ export default async function AdminDashboardPage({ searchParams }) {
                 zIndex: 10,
                 background: "#fff",
                 border: "1px solid var(--line)",
-                borderRadius: 10,
+                borderRadius: 4,
                 padding: 10,
                 display: "flex",
                 flexDirection: "column",
@@ -211,12 +211,12 @@ export default async function AdminDashboardPage({ searchParams }) {
         </div>
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: 16, marginBottom: 12 }}>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, padding: 16, marginBottom: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 8 }}>방문수</div>
         <BarChart data={visitSeries} labelKey="bucket" valueKey="count" />
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: 16, marginBottom: 28 }}>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, padding: 16, marginBottom: 28 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 8 }}>주문 건수</div>
         <BarChart data={orderSeries} labelKey="bucket" valueKey="count" />
       </div>
@@ -225,7 +225,7 @@ export default async function AdminDashboardPage({ searchParams }) {
         <h2 className="section-title">전환 퍼널</h2>
         <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label} · 어느 단계에서 이탈하는지 확인</div>
       </div>
-      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: 16, marginBottom: 28 }}>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, padding: 16, marginBottom: 28 }}>
         <FunnelChart data={funnel} />
       </div>
 
@@ -233,7 +233,7 @@ export default async function AdminDashboardPage({ searchParams }) {
         <h2 className="section-title">시간대별 방문 분포</h2>
         <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label}</div>
       </div>
-      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: 16, marginBottom: 28 }}>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, padding: 16, marginBottom: 28 }}>
         <BarChart data={hourly} labelKey="hour" valueKey="count" height={100} />
       </div>
 
@@ -241,7 +241,7 @@ export default async function AdminDashboardPage({ searchParams }) {
         <h2 className="section-title">상품별 성과</h2>
         <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label} · 조회수(클릭수) 많은 순</div>
       </div>
-      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden", marginBottom: 40 }}>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, overflow: "hidden", marginBottom: 40 }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
@@ -285,7 +285,7 @@ export default async function AdminDashboardPage({ searchParams }) {
         <h2 className="section-title">최근 주문</h2>
         <div style={{ fontSize: 12, color: "var(--muted)" }}>최신 {recentOrders.length}건 · 유입경로(첫 방문 utm_source) 포함</div>
       </div>
-      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden", marginBottom: 40 }}>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, overflow: "hidden", marginBottom: 40 }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
@@ -331,7 +331,7 @@ export default async function AdminDashboardPage({ searchParams }) {
         <h2 className="section-title">페이지별 참여시간 (GA4)</h2>
         <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label} · 참여시간 많은 순 상위 10개</div>
       </div>
-      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 14, overflow: "hidden", marginBottom: 40 }}>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, overflow: "hidden", marginBottom: 40 }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>

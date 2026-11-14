@@ -67,7 +67,7 @@ export default function ReservationSearch({ orders, myPhone }) {
   if (!myPhone) {
     return (
       <p style={{ fontSize: 13, color: "var(--muted)" }}>
-        <Link href="/login?next=/reservations" style={{ color: "var(--ink)", fontWeight: 700 }}>
+        <Link href="/login?next=/mypage" style={{ color: "var(--ink)", fontWeight: 700 }}>
           로그인
         </Link>
         하시면 내 주문을 확인할 수 있어요.

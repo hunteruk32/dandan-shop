@@ -118,8 +118,8 @@ export default async function HomePage() {
                   <a href="#products" className="btn" style={{ background: "var(--ink)", color: "#fff" }}>
                     오늘의 산지 물건 보기
                   </a>
-                  <Link href="/reservations" className="btn" style={{ background: "transparent", border: "1.5px solid #55604F", color: "var(--bg)" }}>
-                    내 주문 확인하기
+                  <Link href="/mypage" className="btn" style={{ background: "transparent", border: "1.5px solid #55604F", color: "var(--bg)" }}>
+                    마이페이지
                   </Link>
                 </div>
               </div>

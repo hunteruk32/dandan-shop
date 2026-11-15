@@ -270,9 +270,16 @@ a { color: inherit; text-decoration: none; }
 }
 
 .hero {
+  display: none;
   position: relative;
   background: linear-gradient(135deg, var(--ink) 0%, #2C4F7C 100%);
   overflow: hidden;
+}
+
+@media (min-width: 900px) {
+  .hero {
+    display: block;
+  }
 }
 
 .hero-media {
@@ -409,20 +416,20 @@ a { color: inherit; text-decoration: none; }
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .category-card {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 4px;
-  padding: 16px 6px;
+  padding: 10px 2px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  justify-content: center;
+  text-align: center;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--ink);
 }

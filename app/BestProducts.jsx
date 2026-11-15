@@ -11,7 +11,7 @@ export default function BestProducts({ products }) {
   if (best.length === 0) return null;
 
   return (
-    <div style={{ marginTop: 40 }}>
+    <div style={{ marginTop: 24 }}>
       <div className="section-head">
         <div>
           <h2 className="section-title">이번 주 베스트</h2>

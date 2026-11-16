@@ -136,12 +136,24 @@ function handleCreate(body) {
   // 오면 바로 "카드결제완료"/"배송준비중"으로 시작하고 토스결제키도 같이 저장한다.
   const paymentKey = String(body.paymentKey || "").trim();
   const isConfirmedCard = body.paymentMethod === "card" && paymentKey;
-  const paymentStatus = isConfirmedCard ? "카드결제완료" : "입금대기";
+  // 가상계좌는 입금이 실제로 확인된 뒤에만 이 함수가 호출되지만(app/api/payment/toss-webhook
+  // 참고), "카드결제완료"라고 쓰면 실제로는 계좌이체인데 카드로 결제한 것처럼 보여서
+  // 헷갈린다 — 결제상태만 "입금확인"으로 다르게 쓰고, 발주 상태(배송준비중)는 카드와 동일하게
+  // 바로 다음 단계로 넘어간다.
+  const isVirtualAccount = isConfirmedCard && !!body.isVirtualAccount;
+  const paymentStatus = isVirtualAccount ? "입금확인" : isConfirmedCard ? "카드결제완료" : "입금대기";
   const orderStatus = isConfirmedCard ? "배송준비중" : "입금확인중";
   const usedPoints = Number(body.usedPoints) || 0;
   const historyLines = [];
   if (isConfirmedCard) {
-    historyLines.push(orderedAt + " [토스페이먼츠] 카드결제 승인 완료 (paymentKey: " + paymentKey + ")");
+    historyLines.push(
+      orderedAt +
+        " [토스페이먼츠] " +
+        (isVirtualAccount ? "가상계좌 입금 확인 완료" : "카드결제 승인 완료") +
+        " (paymentKey: " +
+        paymentKey +
+        ")"
+    );
   }
   if (usedPoints > 0) {
     historyLines.push(orderedAt + " [적립금] " + usedPoints + "원 사용");
@@ -341,10 +353,11 @@ function handleStatusRequest(body) {
   const label = type === "cancel" ? "취소 요청" : "반품 요청";
   let historyEntry = timestamp + " [고객] " + label + (reason ? ": " + reason : "");
 
-  // 카드결제 취소 요청이면 토스페이먼츠에 바로 결제취소를 요청한다(반품은 상품 회수 확인이
-  // 먼저 필요하므로 자동화하지 않고 기존처럼 사람이 처리한다).
+  // 토스페이먼츠로 결제된 주문(카드결제완료/입금확인 — 둘 다 paymentKey가 있다)의 취소
+  // 요청이면 토스페이먼츠에 바로 결제취소를 요청한다(반품은 상품 회수 확인이 먼저 필요하므로
+  // 자동화하지 않고 기존처럼 사람이 처리한다).
   const paymentStatus = String(sheet.getRange(targetRowNum, 15).getValue()).trim();
-  if (type === "cancel" && paymentStatus === "카드결제완료") {
+  if (type === "cancel" && (paymentStatus === "카드결제완료" || paymentStatus === "입금확인")) {
     const row = data[targetRowNum - 1];
     const paymentKey = String(row[17] || "").trim();
     const rowAmount = Number(row[13]) || 0; // 합계금액 — 이 줄(상품) 몫만큼만 부분 취소
@@ -352,8 +365,8 @@ function handleStatusRequest(body) {
     const cancelResult = cancelTossPayment(paymentKey, reason || "고객 요청", rowAmount);
     if (cancelResult.ok) {
       newStatus = "취소완료";
-      sheet.getRange(targetRowNum, 15).setValue("카드결제취소완료");
-      historyEntry += "\n" + timestamp + " [토스페이먼츠] 카드결제 자동 취소완료 (" + rowAmount + "원)";
+      sheet.getRange(targetRowNum, 15).setValue("결제취소완료");
+      historyEntry += "\n" + timestamp + " [토스페이먼츠] 자동 취소완료 (" + rowAmount + "원)";
     } else {
       historyEntry += "\n" + timestamp + " [토스페이먼츠] 자동 취소 실패: " + cancelResult.error + " — 수동으로 확인해주세요.";
     }

@@ -1,12 +1,10 @@
 import { cookies } from "next/headers";
-import { revalidateTag } from "next/cache";
 import { confirmTossPayment } from "@/lib/toss";
-import { buildLineItems } from "@/lib/orderLineItems";
 import { applyRewardDiscount } from "@/lib/rewardPoints";
+import { buildLineItems } from "@/lib/orderLineItems";
 import { VISITOR_COOKIE } from "@/lib/constants";
 import { sql } from "@/lib/db";
-import { getOrderStatusCounts } from "@/lib/sheet";
-import { sendTelegramMessage, formatOrderNotification } from "@/lib/telegram";
+import { finalizeCardOrder } from "@/lib/cardOrderFinalize";
 
 export async function POST(req) {
   const body = await req.json().catch(() => ({}));
@@ -27,100 +25,50 @@ export async function POST(req) {
   const payload = pending[0].payload;
 
   const built = buildLineItems(payload.resolvedItems || []);
-  const { lineItems, totalAmount, usedPoints } = applyRewardDiscount(
-    built.lineItems,
-    built.totalAmount,
-    payload.usedPoints || 0
-  );
+  const { totalAmount } = applyRewardDiscount(built.lineItems, built.totalAmount, payload.usedPoints || 0);
   if (totalAmount !== amount) {
     return Response.json({ ok: false, error: "결제 금액이 주문 금액과 일치하지 않아요." }, { status: 400 });
   }
 
+  let confirmed;
   try {
-    await confirmTossPayment({ paymentKey, orderId, amount });
+    confirmed = await confirmTossPayment({ paymentKey, orderId, amount });
   } catch (err) {
     return Response.json({ ok: false, error: err.message }, { status: 400 });
   }
 
-  const url = process.env.ORDER_WEBHOOK_URL;
-  if (!url) {
-    return Response.json({ ok: false, error: "주문 접수 연결이 설정되지 않았어요." }, { status: 500 });
+  const visitorId = cookies().get(VISITOR_COOKIE)?.value || null;
+
+  // 가상계좌는 승인 API를 호출해도 계좌가 발급된 것이지 입금이 끝난 게 아니다(status가
+  // "WAITING_FOR_DEPOSIT"). 실제로 입금되면 토스가 DEPOSIT_CALLBACK 웹훅으로 알려주므로
+  // (app/api/payment/toss-webhook 참고), 그때까지는 매입현황시트에 주문을 만들지 않고
+  // pending_card_orders에 결제 정보(secret·가상계좌 정보)만 더 채워서 계속 보관한다.
+  if (confirmed.status === "WAITING_FOR_DEPOSIT") {
+    await sql`
+      UPDATE pending_card_orders
+      SET payload = payload || ${JSON.stringify({
+        paymentKey,
+        secret: confirmed.secret,
+        virtualAccount: confirmed.virtualAccount,
+        visitorId,
+      })}::jsonb
+      WHERE token = ${orderId}
+    `;
+    return Response.json({ ok: true, pending: true, virtualAccount: confirmed.virtualAccount });
   }
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      senderName: payload.senderName,
-      senderPhone: payload.senderPhone,
-      senderAddress: payload.senderAddress,
-      recipientName: payload.recipientName,
-      recipientPhone: payload.recipientPhone,
-      recipientAddress: payload.recipientAddress,
-      note: payload.note,
-      items: lineItems,
-      paymentMethod: "card",
+  if (confirmed.status !== "DONE") {
+    return Response.json({ ok: false, error: `알 수 없는 결제 상태예요 (${confirmed.status}).` }, { status: 400 });
+  }
+
+  try {
+    const { orderId: sheetOrderId } = await finalizeCardOrder({
+      token: orderId,
+      payload: { ...payload, visitorId },
       paymentKey,
-      usedPoints,
-      utmSource: payload.utmSource || "",
-    }),
-    redirect: "follow",
-  });
-
-  if (!res.ok) {
-    return Response.json({ ok: false, error: "주문 접수에 실패했어요. 결제는 완료됐으니 고객센터로 문의해주세요." }, { status: 502 });
+    });
+    return Response.json({ ok: true, orderId: sheetOrderId });
+  } catch (err) {
+    return Response.json({ ok: false, error: err.message }, { status: 502 });
   }
-  const result = await res.json().catch(() => ({}));
-  if (!result.ok) {
-    return Response.json({ ok: false, error: result.error || "주문 접수에 실패했어요. 결제는 완료됐으니 고객센터로 문의해주세요." }, { status: 502 });
-  }
-
-  await sql`DELETE FROM pending_card_orders WHERE token = ${orderId}`;
-
-  // Apps Script의 외부 요청 권한에 기대지 않고, 웹훅 성공을 확인한 이 서버에서 바로 캐시를
-  // 갱신한다 — "내 주문 확인"이 60초 캐시를 기다리지 않게 하기 위함.
-  revalidateTag("orders");
-
-  // 텔레그램 주문 알림 — 설정 안 해놨으면 조용히 건너뛴다.
-  try {
-    const statusCounts = await getOrderStatusCounts();
-    await sendTelegramMessage(
-      formatOrderNotification(
-        {
-          senderName: payload.senderName,
-          senderPhone: payload.senderPhone,
-          lineItems,
-          totalAmount,
-          paymentLabel: "💳 카드결제완료",
-          recipientName: payload.recipientName,
-          recipientAddress: payload.recipientAddress,
-        },
-        statusCounts
-      )
-    );
-  } catch {
-    // 알림 실패해도 주문 자체엔 영향 없음
-  }
-
-  // 분석용 이벤트 기록 — 카드결제는 승인이 실제로 확정된 지금 기록한다(이탈·실패 결제는
-  // 집계되지 않도록). 실패해도 주문 자체는 이미 접수됐으니 응답에 영향 주지 않는다.
-  try {
-    const visitorId = cookies().get(VISITOR_COOKIE)?.value || null;
-    await Promise.all(
-      (payload.resolvedItems || [])
-        .filter((it) => it.productId)
-        .map((it) => {
-          const qty = Number(it.qty) || 0;
-          const itemAmount = (Number(it.price) || 0) * qty;
-          return sql`
-            INSERT INTO events (event_type, product_id, session_id, qty, amount)
-            VALUES ('order_item', ${it.productId}, ${visitorId}, ${qty}, ${itemAmount})
-          `;
-        })
-    );
-  } catch {
-    // 분석 기록 실패는 무시
-  }
-
-  return Response.json({ ok: true, orderId: result.orderId || "" });
 }

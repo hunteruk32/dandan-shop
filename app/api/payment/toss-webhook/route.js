@@ -8,14 +8,23 @@ import { sendTelegramMessage } from "@/lib/telegram";
 //
 // 이벤트 본문: { createdAt, secret, status, transactionKey, orderId }
 // orderId는 /api/order가 발급한 임시 토큰(pending_card_orders.token)과 같은 값이다.
+
+// 개발자센터에서 웹훅 등록할 때 URL이 살아있는지 확인하려고 GET으로 먼저 찔러볼 수 있어서
+// (POST만 있으면 405가 나서 등록 자체가 실패할 수 있다), 아무 것도 안 하고 200만 준다.
+export async function GET() {
+  return Response.json({ ok: true });
+}
+
 export async function POST(req) {
   const body = await req.json().catch(() => ({}));
   const orderId = String(body.orderId || "").trim();
   const status = String(body.status || "").trim();
   const secret = String(body.secret || "").trim();
 
+  // 웹훅 등록 시 토스가 보내는 테스트/검증 요청은 orderId가 없을 수 있다 — 이런 요청을
+  // 에러로 응답하면 개발자센터에서 웹훅 등록 자체가 실패하므로, 조용히 200으로 받아준다.
   if (!orderId) {
-    return Response.json({ ok: false, error: "orderId가 없어요." }, { status: 400 });
+    return Response.json({ ok: true, skipped: "no_order_id" });
   }
 
   const pending = await sql`SELECT payload FROM pending_card_orders WHERE token = ${orderId}`;

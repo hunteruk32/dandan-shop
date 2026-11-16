@@ -90,10 +90,10 @@
  *   3) 속성: MEMBER_SHEET_ID / 값: 회원 구글시트 URL의 .../d/와 /edit 사이 긴 문자열
  * 등록 안 해도 주문 접수 자체는 정상 동작하며, 회원 통계 갱신·적립금 적립/차감만 건너뜁니다.
  *
- * 적립금(H열, 8번째 열)도 같은 설정으로 동작합니다. 계좌이체 주문 품목이 "구매확정"되면
- * (handleConfirmPurchase/autoConfirmPurchases 참고) 그 품목 금액의 1%가 자동으로
- * 적립되고, 체크아웃에서 적립금을 쓰면(usedPoints) handleCreate에서 그만큼 차감됩니다.
- * 카드결제 주문은 적립 대상이 아닙니다(계좌이체 유도용). 회원 시트에 H열 "적립금"을
+ * 적립금(H열, 8번째 열)도 같은 설정으로 동작합니다. 주문 품목이 "구매확정"되면
+ * (handleConfirmPurchase/autoConfirmPurchases 참고) 결제수단(계좌이체/카드) 상관없이
+ * 그 품목 금액의 1%가 자동으로 적립되고, 체크아웃에서 적립금을 쓰면(usedPoints)
+ * handleCreate에서 그만큼 차감됩니다. 회원 시트에 H열 "적립금"을
  * 미리 추가해주세요 — 숫자만 들어가며, 비어있으면 0으로 취급합니다.
  * 미끼 상품(BENEFIT_EXCLUDED_PRODUCT_IDS, lib/benefitExclusions.js와 같은 목록)은
  * 적립도 사용도 되지 않습니다. 해당 줄의 수정이력에 "[적립제외]"가 남고, 구매확정 때
@@ -390,14 +390,12 @@ function lineExcludesReward(it) {
   return !!(it && (it.rewardExcluded === true || isBenefitExcludedProduct(it.productId)));
 }
 
-// 계좌이체 주문이 구매확정되면 그 줄(품목) 금액의 1%를 적립해준다. 카드결제 주문
-// (토스결제키가 있는 줄)이거나, 적립금 제도 시행일 전에 들어온 주문은 적립 대상이 아니다.
-// 주문 접수 때 "[적립제외]"가 수정이력에 남은 줄(미끼 상품)도 적립하지 않는다.
+// 주문이 구매확정되면 결제수단(계좌이체/카드) 상관없이 그 줄(품목) 금액의 1%를
+// 적립해준다. 적립금 제도 시행일 전에 들어온 주문은 적립 대상이 아니다. 주문 접수 때
+// "[적립제외]"가 수정이력에 남은 줄(미끼 상품)도 적립하지 않는다.
 // 적립된 금액(0이면 적립 없음)을 반환한다.
 function awardBankTransferReward(sheet, rowNum) {
   const row = sheet.getRange(rowNum, 1, 1, 22).getValues()[0];
-  const paymentKey = String(row[17] || "").trim(); // 토스결제키
-  if (paymentKey) return 0;
   const history = String(row[21] || ""); // 수정이력
   if (history.indexOf(REWARD_EXCLUDED_MARK) !== -1) return 0;
   const orderedAt = new Date(row[1]); // 주문일시
@@ -552,7 +550,7 @@ function handleConfirmPurchase(body) {
   let reward = 0;
   try {
     reward = awardBankTransferReward(sheet, targetRowNum);
-    if (reward > 0) historyEntry += "\n" + timestamp + " [적립금] " + reward + "원 적립 (계좌이체 구매확정 1%)";
+    if (reward > 0) historyEntry += "\n" + timestamp + " [적립금] " + reward + "원 적립 (구매확정 1%)";
   } catch (err) {
     historyEntry += "\n" + timestamp + " [적립금] 적립 실패: " + err + " — 수동으로 확인해주세요.";
   }
@@ -635,7 +633,7 @@ function autoConfirmPurchases() {
     let historyEntry = timestamp + " [자동] 배송완료 72시간 경과로 구매확정 처리";
     try {
       const reward = awardBankTransferReward(sheet, rowNum);
-      if (reward > 0) historyEntry += "\n" + timestamp + " [적립금] " + reward + "원 적립 (계좌이체 구매확정 1%)";
+      if (reward > 0) historyEntry += "\n" + timestamp + " [적립금] " + reward + "원 적립 (구매확정 1%)";
     } catch (err) {
       historyEntry += "\n" + timestamp + " [적립금] 적립 실패: " + err + " — 수동으로 확인해주세요.";
     }

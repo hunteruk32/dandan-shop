@@ -12,7 +12,6 @@ import { REWARD_USE_THRESHOLD, REWARD_USE_MIN_ORDER_AMOUNT, pointsEligibleAmount
 import { buildLineItems } from "@/lib/orderLineItems";
 import { resolveShippingFees } from "@/lib/shipping";
 import { isBenefitExcludedProduct } from "@/lib/benefitExclusions";
-import { trackPurchase } from "@/lib/gtag";
 
 export default function CheckoutForm() {
   const cart = useCart();
@@ -31,12 +30,8 @@ export default function CheckoutForm() {
     sameAsSender: false,
     note: "",
   });
-  const [state, setState] = useState("idle"); // idle | submitting | done | error
+  const [state, setState] = useState("idle"); // idle | submitting | error
   const [errorMsg, setErrorMsg] = useState("");
-  const [orderId, setOrderId] = useState("");
-  const [orderTotal, setOrderTotal] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState("bank"); // bank | card
-  const [showCardNotice, setShowCardNotice] = useState(false);
   const [showRewardNotice, setShowRewardNotice] = useState(false);
   const requestTossPaymentRef = useRef(null);
   const cardPaymentEnabled = isCardPaymentAllowed(phone || form.senderPhone);
@@ -82,10 +77,6 @@ export default function CheckoutForm() {
       .catch(() => {});
   }, [phone]);
 
-  const bankName = process.env.NEXT_PUBLIC_BANK_NAME || "은행명 미설정";
-  const bankAccount = process.env.NEXT_PUBLIC_BANK_ACCOUNT || "계좌번호 미설정";
-  const bankHolder = process.env.NEXT_PUBLIC_BANK_HOLDER || "예금주 미설정";
-
   const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   const toggleSameAsSender = (e) => {
@@ -124,22 +115,13 @@ export default function CheckoutForm() {
         recipientAddress,
         note: form.note.trim(),
         items: cart.items,
-        paymentMethod,
+        paymentMethod: "card",
         usedPoints,
       }),
     });
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || "실패");
     return { orderId: data.orderId || "", totalAmount: data.totalAmount || cart.total };
-  };
-
-  const submitBankTransfer = async () => {
-    const { orderId: finalOrderId, totalAmount: finalTotal } = await createOrder();
-    setOrderId(finalOrderId);
-    setOrderTotal(finalTotal);
-    cart.clear();
-    setState("done");
-    trackPurchase({ transactionId: finalOrderId, value: finalTotal });
   };
 
   const submitCardPayment = async () => {
@@ -168,11 +150,7 @@ export default function CheckoutForm() {
     setState("submitting");
     setErrorMsg("");
     try {
-      if (paymentMethod === "card") {
-        await submitCardPayment();
-      } else {
-        await submitBankTransfer();
-      }
+      await submitCardPayment();
     } catch (err) {
       setState("error");
       setErrorMsg(err.message || "주문 접수 중 오류가 발생했어요.");
@@ -181,41 +159,12 @@ export default function CheckoutForm() {
 
   if (!cart || phone === undefined) return null;
 
-  if (state !== "done" && cart.items.length === 0) {
+  if (cart.items.length === 0) {
     return (
       <div className="wrap">
         <p style={{ marginTop: 40 }}>장바구니가 비어있어요.</p>
         <Link href="/" className="btn" style={{ display: "inline-block", marginTop: 12 }}>
           상품 보러가기
-        </Link>
-      </div>
-    );
-  }
-
-  if (state === "done") {
-    return (
-      <div className="wrap">
-        <div className="card" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8, marginTop: 20 }}>
-          <div style={{ fontWeight: 800, fontSize: 15 }}>주문 접수 완료</div>
-          <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>
-            아래 계좌로 입금해주시면 확인 후 상태가 &quot;입금확인&quot;으로 바뀝니다.
-            {orderId && (
-              <>
-                {" "}
-                주문번호 <b>{orderId}</b>로 &quot;내 주문 확인&quot;에서 진행 상황을 조회할 수 있어요.
-              </>
-            )}
-          </p>
-          <div style={{ marginTop: 6, fontSize: 14, lineHeight: 1.8 }}>
-            <div>입금은행: <b>{bankName}</b></div>
-            <div>계좌번호: <b>{bankAccount}</b></div>
-            <div>예금주: <b>{bankHolder}</b></div>
-            <div>입금자명: <b>{form.senderName}</b> (발송인과 동일하게 입금해주세요)</div>
-            <div>입금액: <b style={{ color: "var(--ink)" }}>{orderTotal.toLocaleString()}원</b></div>
-          </div>
-        </div>
-        <Link href="/" className="btn" style={{ display: "block", textAlign: "center", marginTop: 16 }}>
-          상품 목록으로
         </Link>
       </div>
     );
@@ -276,7 +225,7 @@ export default function CheckoutForm() {
             {pointsBase > 0 && (
               <>
                 {" "}
-                로그인하면 계좌이체 적립금 혜택을 받을 수 있어요 —{" "}
+                로그인하면 적립금 혜택을 받을 수 있어요 —{" "}
                 <Link href={`/login?next=/checkout`} style={{ color: "var(--ink)", fontWeight: 700 }}>
                   로그인하기
                 </Link>
@@ -297,7 +246,7 @@ export default function CheckoutForm() {
           />
         )}
         <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 성함</label>
-        <input className="input" value={form.senderName} onChange={update("senderName")} placeholder="입금자명과 동일하게 적어주세요" />
+        <input className="input" value={form.senderName} onChange={update("senderName")} placeholder="실제 주문자 성함" />
         <label style={{ fontSize: 13, fontWeight: 700 }}>발송인 주소</label>
         <AddressSearchField
           base={form.senderAddressBase}
@@ -377,64 +326,22 @@ export default function CheckoutForm() {
           <span style={{ color: "var(--ink)" }}>{payableTotal.toLocaleString()}원</span>
         </div>
 
-        <div style={{ fontSize: 13, fontWeight: 800, marginTop: 8 }}>결제 방법</div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            className={`tab ${paymentMethod === "bank" ? "active" : ""}`}
-            style={{ flex: 1, padding: "10px 0" }}
-            onClick={() => setPaymentMethod("bank")}
-          >
-            계좌이체
-          </button>
-          <button
-            type="button"
-            className={`tab ${paymentMethod === "card" ? "active" : ""}`}
-            style={{ flex: 1, padding: "10px 0" }}
-            onClick={() => (cardPaymentEnabled ? setPaymentMethod("card") : setShowCardNotice(true))}
-          >
-            카드결제{!cardPaymentEnabled && " (준비중)"}
-          </button>
-        </div>
+        <div style={{ fontSize: 13, fontWeight: 800, marginTop: 8 }}>결제 수단</div>
         <p style={{ fontSize: 12, color: hasExcludedItem ? "var(--muted)" : "var(--ink)", margin: 0 }}>
           {pointsBase <= 0
             ? "이 주문 상품은 적립금 적립·사용 대상이 아니에요."
             : hasExcludedItem
-              ? "적립 제외 상품에는 적립금이 쌓이지 않고 사용할 수도 없어요. 나머지 금액은 계좌이체 구매확정 시 1%가 적립돼요."
-              : `계좌이체로 주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (${REWARD_USE_THRESHOLD.toLocaleString()}원 이상 적립 시 ${REWARD_USE_MIN_ORDER_AMOUNT.toLocaleString()}원 이상 주문부터 사용 가능)`}
+              ? "적립 제외 상품에는 적립금이 쌓이지 않고 사용할 수도 없어요. 나머지 금액은 구매확정 시 1%가 적립돼요."
+              : `주문하면 구매확정 시 결제금액의 1%가 적립금으로 쌓여요 (${REWARD_USE_THRESHOLD.toLocaleString()}원 이상 적립 시 ${REWARD_USE_MIN_ORDER_AMOUNT.toLocaleString()}원 이상 주문부터 사용 가능)`}
         </p>
         <p style={{ fontSize: 12, color: "var(--muted)", margin: 0 }}>
-          계좌이체 시 비고에 남겨주시면 사업자지출증빙 또는 현금영수증 발급해드려요
+          비고에 남겨주시면 사업자지출증빙 또는 현금영수증 발급해드려요
         </p>
 
-        {showCardNotice && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.4)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 50,
-              padding: 20,
-            }}
-            onClick={() => setShowCardNotice(false)}
-          >
-            <div
-              className="card"
-              style={{ flexDirection: "column", alignItems: "flex-start", gap: 10, maxWidth: 320, background: "#fff", padding: 20 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ fontWeight: 800, fontSize: 15 }}>카드결제 준비 중이에요</div>
-              <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
-                현재 PG사(결제대행사) 계약 심사가 진행 중이라, 지금은 계좌이체로만 주문이 가능해요. 양해 부탁드립니다.
-              </p>
-              <button className="btn" style={{ width: "100%" }} onClick={() => setShowCardNotice(false)}>
-                확인
-              </button>
-            </div>
-          </div>
+        {!cardPaymentEnabled && (
+          <p style={{ fontSize: 13, color: "var(--error)", margin: 0 }}>
+            결제 시스템 점검 중이에요. 잠시 후 다시 시도해주세요.
+          </p>
         )}
 
         {showRewardNotice && (
@@ -456,9 +363,9 @@ export default function CheckoutForm() {
               style={{ flexDirection: "column", alignItems: "flex-start", gap: 10, maxWidth: 320, background: "#fff", padding: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ fontWeight: 800, fontSize: 15 }}>계좌이체 적립 혜택</div>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>구매 적립 혜택</div>
               <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
-                계좌이체로 주문하면 구매확정 시 <b style={{ color: "var(--ink)" }}>결제금액의 1%</b>가 적립돼요.
+                주문하면 구매확정 시 <b style={{ color: "var(--ink)" }}>결제금액의 1%</b>가 적립돼요.
                 <br />
                 현재 보유 적립금: <b style={{ color: "var(--ink)" }}>{rewardPoints.toLocaleString()}원</b>
                 <br />
@@ -478,7 +385,7 @@ export default function CheckoutForm() {
           </div>
         )}
 
-        {paymentMethod === "card" && (
+        {cardPaymentEnabled && (
           <TossPaymentWidget
             amount={payableTotal}
             onReady={(requestPayment) => {
@@ -495,8 +402,8 @@ export default function CheckoutForm() {
           <TrustBadges align="left" />
         </div>
 
-        <button className="btn" onClick={submit} disabled={state === "submitting" || !requiredFilled}>
-          {state === "submitting" ? "처리 중…" : paymentMethod === "card" ? "결제하기" : "주문 접수하고 계좌번호 받기"}
+        <button className="btn" onClick={submit} disabled={state === "submitting" || !requiredFilled || !cardPaymentEnabled}>
+          {state === "submitting" ? "처리 중…" : "결제하기"}
         </button>
       </div>
     </div>

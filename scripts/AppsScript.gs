@@ -35,6 +35,15 @@
  * 등록 안 해도 주문 접수·카드결제 승인은 정상 동작하며, 취소만 기존처럼(취소중 상태로 바뀌고)
  * 사람이 직접 토스 상점관리자에서 환불 처리하면 됩니다.
  *
+ * ※ 이 구글시트(Apps Script)가 토스 API를 직접 호출하면, 구글 쪽 서버 IP가 토스의
+ * "허용 국가/IP" 보안 정책(기본값: 대한민국만 허용)에 막혀 "API 키 접근 정책에 의해
+ * 허용되지 않은 요청입니다" 에러가 날 수 있습니다. 이럴 땐 아래 CANCEL_PROXY_URL을
+ * 등록해주세요 — 그러면 구글이 아니라 한국 리전에 고정 배포된 Vercel 서버가 대신
+ * 토스에 취소를 요청하게 되어 이 문제를 피할 수 있습니다:
+ *   1) 이 Apps Script 편집기에서 왼쪽 톱니바퀴(프로젝트 설정) 클릭
+ *   2) "스크립트 속성" 항목에서 "스크립트 속성 추가"
+ *   3) 속성: CANCEL_PROXY_URL / 값: https://내도메인/api/payment/cancel
+ *
  * ── 즉시 반영 설정 (선택, 안 해도 최대 60초 뒤엔 알아서 반영됨) ──
  * 기본적으로 홈페이지는 60초마다 시트 내용을 다시 불러오는데, 그래서 주문 직후 "내 주문
  * 확인"에 내 주문이 바로 안 보일 수 있습니다. triggerRevalidate 참고 — 아래 두 속성을
@@ -666,6 +675,10 @@ function autoConfirmPurchases() {
  * 토스페이먼츠 결제취소 API 호출. paymentKey가 없거나 TOSS_SECRET_KEY 속성이 설정 안 돼
  * 있으면 호출하지 않고 바로 실패로 반환한다(기존처럼 수동 처리하라는 뜻).
  * cancelAmount를 생략하면 전액 취소, 지정하면 그 금액만큼만 부분 취소한다.
+ *
+ * CANCEL_PROXY_URL 스크립트 속성이 설정돼 있으면 토스를 직접 호출하지 않고 그 주소
+ * (Vercel의 app/api/payment/cancel)를 거친다 — 구글 인프라 IP가 토스의 "허용 국가/IP"
+ * 보안 정책에 막히는 걸 피하기 위함. 설정 안 해놨으면 기존처럼 토스 API를 직접 호출한다.
  */
 function cancelTossPayment(paymentKey, reason, cancelAmount) {
   if (!paymentKey) {
@@ -676,10 +689,29 @@ function cancelTossPayment(paymentKey, reason, cancelAmount) {
     return { ok: false, error: "TOSS_SECRET_KEY 스크립트 속성이 설정 안 돼 있어요" };
   }
 
-  const payload = { cancelReason: reason || "고객 요청" };
-  if (cancelAmount) payload.cancelAmount = cancelAmount;
+  const proxyUrl = PropertiesService.getScriptProperties().getProperty("CANCEL_PROXY_URL");
 
   try {
+    if (proxyUrl) {
+      const res = UrlFetchApp.fetch(proxyUrl, {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify({
+          secretKey: secretKey,
+          paymentKey: paymentKey,
+          reason: reason || "고객 요청",
+          cancelAmount: cancelAmount || undefined,
+        }),
+        muteHttpExceptions: true,
+      });
+      const body = JSON.parse(res.getContentText() || "{}");
+      if (body.ok) return { ok: true };
+      return { ok: false, error: body.error || ("프록시 응답 " + res.getResponseCode()) };
+    }
+
+    const payload = { cancelReason: reason || "고객 요청" };
+    if (cancelAmount) payload.cancelAmount = cancelAmount;
+
     const res = UrlFetchApp.fetch("https://api.tosspayments.com/v1/payments/" + paymentKey + "/cancel", {
       method: "post",
       contentType: "application/json",

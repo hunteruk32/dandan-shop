@@ -11,6 +11,7 @@ import ZoomableImage from "./ZoomableImage";
 import StickyBuyBar from "./StickyBuyBar";
 import OpenChatFab from "../../OpenChatFab";
 import ProductTestimonials from "./ProductTestimonials";
+import ProductTrustSections from "./ProductTrustSections";
 import ReviewSection from "./ReviewSection";
 import OptionList from "./OptionList";
 import ShippingCutoffTimer from "../../ShippingCutoffTimer";
@@ -150,6 +151,8 @@ export default async function ProductPage({ params }) {
           style={{ width: "100%", display: "block", marginTop: 16, borderRadius: 4 }}
         />
       )}
+
+      <ProductTrustSections product={product} />
 
       <Suspense fallback={null}>
         <ReviewSection key={product.id} productId={product.id} initial={reviewData} />

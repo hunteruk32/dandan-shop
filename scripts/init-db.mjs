@@ -28,6 +28,9 @@ async function main() {
   await sql`CREATE INDEX IF NOT EXISTS events_product_idx ON events (product_id) WHERE product_id IS NOT NULL`;
   await sql`CREATE INDEX IF NOT EXISTS events_session_idx ON events (session_id)`;
 
+  // 모바일/PC 유입 분석용 — 기존 테이블에도 적용되도록 ALTER로 추가한다.
+  await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS device_type TEXT`;
+
   await sql`
     CREATE TABLE IF NOT EXISTS reviews (
       id BIGSERIAL PRIMARY KEY,

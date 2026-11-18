@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { getInternalProducts, getOrders } from "@/lib/sheet";
-import { getSummary, getTimeSeries, getProductPerformance, getHourlyDistribution, getFunnel, resolveRange, PERIODS } from "@/lib/analytics";
+import { getSummary, getTimeSeries, getProductPerformance, getHourlyDistribution, getFunnel, getDeviceBreakdown, resolveRange, PERIODS } from "@/lib/analytics";
 import { getEngagementSummary, getEngagementByPage, isGa4Configured } from "@/lib/ga4";
 import AdminLogoutButton from "../AdminLogoutButton";
+import CategoryFilterSelect from "./CategoryFilterSelect";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,40 @@ function BarChart({ data, labelKey, valueKey, height = 120 }) {
           <div style={{ fontSize: 9, color: "var(--muted)", marginTop: 4, whiteSpace: "nowrap" }}>{d[labelKey]}</div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function DeviceBreakdownBar({ data }) {
+  const rows = [
+    { key: "mobile", label: "모바일", count: data.mobile, pct: data.mobilePct },
+    { key: "pc", label: "PC", count: data.pc, pct: data.pcPct },
+    ...(data.unknown > 0 ? [{ key: "unknown", label: "미분류", count: data.unknown, pct: data.unknownPct }] : []),
+  ];
+  return (
+    <div>
+      <div style={{ display: "flex", height: 22, borderRadius: 6, overflow: "hidden", background: "#F6F4EE", marginBottom: 12 }}>
+        {rows.map((r, i) => (
+          <div
+            key={r.key}
+            style={{
+              width: `${Math.max(r.pct, r.pct > 0 ? 2 : 0)}%`,
+              background: r.key === "mobile" ? "var(--ink)" : r.key === "pc" ? "#9B8F7A" : "var(--line)",
+              borderRight: i < rows.length - 1 ? "2px solid #fff" : "none",
+            }}
+          />
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+        {rows.map((r) => (
+          <div key={r.key} style={{ fontSize: 13 }}>
+            <span style={{ fontWeight: 700 }}>{r.label}</span>{" "}
+            <span style={{ color: "var(--muted)" }}>
+              {r.count.toLocaleString()}회 · {r.pct.toFixed(1)}%
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -107,13 +142,14 @@ export default async function AdminDashboardPage({ searchParams }) {
   const to = searchParams?.to || "";
   const range = resolveRange(period, from, to);
 
-  const [summary, visitSeries, orderSeries, productPerf, hourly, funnel, products, engagement, engagementByPage, orders] = await Promise.all([
+  const [summary, visitSeries, orderSeries, productPerf, hourly, funnel, deviceBreakdown, products, engagement, engagementByPage, orders] = await Promise.all([
     getSummary(range),
     getTimeSeries("pageview", period, range),
     getTimeSeries("order_item", period, range),
     getProductPerformance(range),
     getHourlyDistribution(range),
     getFunnel(range),
+    getDeviceBreakdown(range),
     getInternalProducts(),
     getEngagementSummary(range),
     getEngagementByPage(range),
@@ -123,6 +159,13 @@ export default async function AdminDashboardPage({ searchParams }) {
   const productMap = new Map(products.map((p) => [p.id, { name: p.name, category: p.category }]));
   const presetPeriods = Object.entries(PERIODS).filter(([key]) => key !== "custom");
   const recentOrders = groupOrdersById(orders).slice(0, 30);
+
+  const categories = Array.from(new Set(products.map((p) => p.category).filter(Boolean))).sort();
+  const selectedCategory = searchParams?.cat || "all";
+  const filteredProductPerf =
+    selectedCategory === "all"
+      ? productPerf
+      : productPerf.filter((row) => productMap.get(row.productId)?.category === selectedCategory);
 
   return (
     <div className="wrap" style={{ maxWidth: 1100 }}>
@@ -230,6 +273,18 @@ export default async function AdminDashboardPage({ searchParams }) {
       </div>
 
       <div className="section-head">
+        <h2 className="section-title">기기별 유입</h2>
+        <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label} · 모바일 / PC</div>
+      </div>
+      <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, padding: 16, marginBottom: 28 }}>
+        {deviceBreakdown.total === 0 ? (
+          <div style={{ textAlign: "center", color: "var(--muted)", fontSize: 13, padding: 8 }}>이 기간에는 쌓인 데이터가 없어요.</div>
+        ) : (
+          <DeviceBreakdownBar data={deviceBreakdown} />
+        )}
+      </div>
+
+      <div className="section-head">
         <h2 className="section-title">시간대별 방문 분포</h2>
         <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label}</div>
       </div>
@@ -239,7 +294,10 @@ export default async function AdminDashboardPage({ searchParams }) {
 
       <div className="section-head">
         <h2 className="section-title">상품별 성과</h2>
-        <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label} · 조회수(클릭수) 많은 순</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ fontSize: 12, color: "var(--muted)" }}>{range.label} · 조회수(클릭수) 많은 순</div>
+          <CategoryFilterSelect categories={categories} value={selectedCategory} period={period} from={from} to={to} />
+        </div>
       </div>
       <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 4, overflow: "hidden", marginBottom: 40 }}>
         <div style={{ overflowX: "auto" }}>
@@ -248,28 +306,28 @@ export default async function AdminDashboardPage({ searchParams }) {
               <tr style={{ background: "#F6F4EE", textAlign: "left" }}>
                 <th style={{ padding: "10px 14px" }}>상품</th>
                 <th style={{ padding: "10px 14px" }}>카테고리</th>
-                <th style={{ padding: "10px 14px", textAlign: "right" }}>클릭수</th>
                 <th style={{ padding: "10px 14px", textAlign: "right" }}>구매수</th>
+                <th style={{ padding: "10px 14px", textAlign: "right" }}>클릭수</th>
                 <th style={{ padding: "10px 14px", textAlign: "right" }}>판매율</th>
                 <th style={{ padding: "10px 14px", textAlign: "right" }}>매출</th>
               </tr>
             </thead>
             <tbody>
-              {productPerf.length === 0 ? (
+              {filteredProductPerf.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: 20, textAlign: "center", color: "var(--muted)" }}>
                     이 기간에는 쌓인 데이터가 없어요.
                   </td>
                 </tr>
               ) : (
-                productPerf.map((row) => {
+                filteredProductPerf.map((row) => {
                   const p = productMap.get(row.productId);
                   return (
                     <tr key={row.productId} style={{ borderTop: "1px solid var(--line)" }}>
                       <td style={{ padding: "10px 14px", fontWeight: 700 }}>{p ? p.name : row.productId}</td>
                       <td style={{ padding: "10px 14px", color: "var(--muted)" }}>{p ? p.category : "-"}</td>
-                      <td style={{ padding: "10px 14px", textAlign: "right" }}>{row.clickCount.toLocaleString()}</td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>{row.purchaseQty.toLocaleString()}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "right" }}>{row.clickCount.toLocaleString()}</td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>{row.sellThroughRate.toFixed(1)}%</td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>{row.revenue.toLocaleString()}원</td>
                     </tr>

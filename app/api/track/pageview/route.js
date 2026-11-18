@@ -1,7 +1,8 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { sql } from "@/lib/db";
 import { VISITOR_COOKIE } from "@/lib/constants";
 import { isValidProductId } from "@/lib/productId";
+import { detectDeviceType } from "@/lib/deviceType";
 
 function extractProductId(path) {
   const m = /^\/product\/([^/?#]+)/.exec(path || "");
@@ -18,10 +19,11 @@ export async function POST(req) {
 
     const sessionId = cookies().get(VISITOR_COOKIE)?.value || null;
     const productId = extractProductId(path);
+    const deviceType = detectDeviceType(headers().get("user-agent"));
 
     await sql`
-      INSERT INTO events (event_type, path, product_id, session_id)
-      VALUES ('pageview', ${path}, ${productId}, ${sessionId})
+      INSERT INTO events (event_type, path, product_id, session_id, device_type)
+      VALUES ('pageview', ${path}, ${productId}, ${sessionId}, ${deviceType})
     `;
     return Response.json({ ok: true });
   } catch {

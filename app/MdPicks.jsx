@@ -13,7 +13,7 @@ function ArrowIcon({ dir }) {
 }
 
 export default function MdPicks({ products }) {
-  const picks = products.filter((p) => p.mdPick);
+  const picks = products.filter((p) => p.mdPick).sort((a, b) => a.mdPickOrder - b.mdPickOrder);
   const rowRef = useRef(null);
 
   if (picks.length === 0) return null;

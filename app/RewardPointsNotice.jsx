@@ -61,7 +61,7 @@ export default function RewardPointsNotice() {
           적립 혜택
         </div>
         <h2 style={{ fontSize: 19, fontWeight: 800, margin: "0 0 14px", color: "var(--ink)", lineHeight: 1.4 }}>
-          계좌이체 주문, 1% 적립돼요
+          주문하면 1% 적립돼요
         </h2>
 
         <div
@@ -81,7 +81,7 @@ export default function RewardPointsNotice() {
 
         <div style={{ fontSize: 14, lineHeight: 1.8, color: "var(--ink)", marginBottom: 18 }}>
           <p style={{ margin: 0 }}>
-            계좌이체로 주문하면 구매확정 시 <b>결제금액의 1%</b>가 적립돼요.
+            결제 수단 상관없이, 주문하면 구매확정 시 <b>결제금액의 1%</b>가 적립돼요.
           </p>
           <p style={{ margin: "6px 0 0", color: "var(--muted)", fontSize: 13 }}>
             {REWARD_USE_THRESHOLD.toLocaleString()}원 이상 적립되면 {REWARD_USE_MIN_ORDER_AMOUNT.toLocaleString()}원 이상 주문부터

@@ -49,14 +49,39 @@ export default function RewardPointsNotice() {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
+          position: "relative",
           background: "var(--bg)",
           borderRadius: 4,
           maxWidth: 340,
           width: "100%",
+          maxHeight: "90vh",
+          overflowY: "auto",
           padding: "24px 22px 18px",
           boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
+          boxSizing: "border-box",
         }}
       >
+        <button
+          onClick={close}
+          aria-label="닫기"
+          style={{
+            position: "absolute",
+            top: 14,
+            right: 14,
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            border: "none",
+            background: "rgba(0,0,0,0.08)",
+            color: "var(--ink)",
+            fontSize: 16,
+            lineHeight: "28px",
+            cursor: "pointer",
+          }}
+        >
+          ×
+        </button>
+
         <div style={{ fontSize: 11, fontWeight: 800, color: "var(--ink)", letterSpacing: 2, marginBottom: 6 }}>
           적립 혜택
         </div>

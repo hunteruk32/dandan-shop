@@ -6,12 +6,15 @@ import {
   normalizePhone,
   SESSION_COOKIE,
   SESSION_MAX_AGE,
+  SESSION_SHORT_MAX_AGE,
 } from "@/lib/auth";
 
 export async function POST(req) {
   const body = await req.json();
   const phone = normalizePhone(body.phone);
   const password = String(body.password || "");
+  // 기본값은 유지(true) — 안 보내는 기존 클라이언트·소셜 로그인과 동작이 같게.
+  const keepLoggedIn = body.keepLoggedIn !== false;
 
   const members = await getMembers();
   const member = members.find((m) => m.phone === phone);
@@ -20,12 +23,13 @@ export async function POST(req) {
     return Response.json({ ok: false, error: "전화번호 또는 비밀번호가 올바르지 않아요." }, { status: 401 });
   }
 
-  const token = createSessionToken({ phone });
+  const maxAge = keepLoggedIn ? SESSION_MAX_AGE : SESSION_SHORT_MAX_AGE;
+  const token = createSessionToken({ phone }, maxAge);
   cookies().set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: true,
     sameSite: "lax",
-    maxAge: SESSION_MAX_AGE,
+    maxAge,
     path: "/",
   });
 

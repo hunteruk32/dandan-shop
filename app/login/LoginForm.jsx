@@ -20,6 +20,7 @@ export default function LoginForm() {
   const next = params.get("next") || "/";
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -37,7 +38,7 @@ export default function LoginForm() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, password }),
+        body: JSON.stringify({ phone, password, keepLoggedIn }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "로그인에 실패했어요.");
@@ -64,6 +65,11 @@ export default function LoginForm() {
         onChange={(e) => setPassword(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && submit()}
       />
+
+      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--muted)", marginTop: 10, cursor: "pointer" }}>
+        <input type="checkbox" checked={keepLoggedIn} onChange={(e) => setKeepLoggedIn(e.target.checked)} />
+        로그인 상태 유지
+      </label>
 
       {error && <p style={{ color: "var(--error)", fontSize: 13, marginTop: 8 }}>{error}</p>}
 
